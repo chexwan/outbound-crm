@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Asia Expeditions CRM | Заметки, ИИ-дожим & Редактирование</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -764,10 +767,6 @@
     ];
 
     let bookings = JSON.parse(localStorage.getItem('almaty_ny_bookings')) || [];
-    if (!bookings.some(b => b.tourRoute && b.tourRoute.includes('МЕГА'))) {
-      bookings = defaultBookings;
-      localStorage.setItem('almaty_ny_bookings', JSON.stringify(bookings));
-    }
 
     let currentStatusFilter = 'all';
     let currentTourFilter = 'all';
@@ -883,18 +882,13 @@
 
       // Realtime listener for bookings
       db.collection('bookings').onSnapshot(snapshot => {
-        if (snapshot.empty && !isBookingsLoadedFromCloud) {
-          defaultBookings.forEach(b => cloudSaveBooking(b));
-        } else if (!snapshot.empty) {
-          const list = [];
-          snapshot.forEach(doc => list.push(doc.data()));
-          list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-          bookings = list;
-          localStorage.setItem('almaty_ny_bookings', JSON.stringify(bookings));
-          renderBookings();
-          updateStats();
-        }
-        isBookingsLoadedFromCloud = true;
+        const list = [];
+        snapshot.forEach(doc => list.push(doc.data()));
+        list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        bookings = list;
+        localStorage.setItem('almaty_ny_bookings', JSON.stringify(bookings));
+        renderBookings();
+        updateStats();
         updateCloudStatus('online', 'Облако: Синхронизировано');
       }, err => {
         console.error("Firestore bookings sync error:", err);
@@ -903,18 +897,15 @@
 
       // Realtime listener for catalog
       db.collection('catalog').onSnapshot(snapshot => {
-        if (snapshot.empty && !isCatalogLoadedFromCloud) {
-          baseCatalog.forEach(t => cloudSaveTour(t));
-        } else if (!snapshot.empty) {
-          const list = [];
-          snapshot.forEach(doc => list.push(doc.data()));
-          list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        const list = [];
+        snapshot.forEach(doc => list.push(doc.data()));
+        list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        if (list.length > 0) {
           catalog = list;
           localStorage.setItem('app_tours_catalog', JSON.stringify(catalog));
           renderCatalog();
           updateStats();
         }
-        isCatalogLoadedFromCloud = true;
         updateCloudStatus('online', 'Облако: Синхронизировано');
       }, err => {
         console.error("Firestore catalog sync error:", err);
