@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asia Expeditions CRM | Заметки, ИИ-дожим & Редактирование</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Firebase App & Firestore SDK (Realtime Multi-Manager Sync) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#ecfdf5', 500: '#10b981', 600: '#059669', 700: '#047857' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-600 via-amber-500 to-emerald-600 flex items-center justify-center text-white shadow-md shadow-rose-500/20">
+          <i data-lucide="compass" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-black text-slate-900 leading-tight">Asia Expeditions Tour Engine</h1>
+            <span id="cloudStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-xs">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Подключение к облаку...
+            </span>
+          </div>
+          <p class="text-xs text-slate-500">Умные заметки, ИИ-дожим & Учет оплат • <span class="text-emerald-700 font-bold">👤 Менеджер: Тынчтык</span></p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <div class="bg-slate-100 p-1 rounded-xl flex items-center gap-1 border border-slate-200">
+          <button id="tabBtnCrm" onclick="switchView('crm')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm transition flex items-center gap-1.5">
+            📋 Заявки & Оплаты туристов
+          </button>
+          <button id="tabBtnCatalog" onclick="switchView('catalog')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5">
+            🧳 Каталог & Программы туров
+          </button>
+          <button id="tabBtnWa" onclick="switchView('wa')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5">
+            📱 WhatsApp-скрипты
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+
+  <!-- ======================================================== -->
+  <!-- VIEW 1: BOOKINGS & FINANCE (СПИСОК ТУРИСТОВ И ЗАМЕТОК)   -->
+  <!-- ======================================================== -->
+  <div id="viewCrm" class="flex-grow flex flex-col py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+      
+      <!-- Top Actions Bar -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-xl font-black text-slate-900">Список туристов, оплаты & заметки</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Редактируйте карточки, оставляйте заметки («с детьми», «обдумывает»), и ИИ сгенерирует точный ответ.</p>
+        </div>
+        <button onclick="openQuickManualModal()" class="inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-2xl shadow-lg shadow-emerald-600/20 transition">
+          <i data-lucide="user-plus" class="w-4 h-4"></i> + Быстро записать туриста
+        </button>
+      </div>
+
+      <!-- KPI Summary Bar -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Всего туристов в базе</p>
+            <p id="stat-total" class="text-2xl font-black text-slate-900 mt-1">0 чел</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center"><i data-lucide="users" class="w-5 h-5"></i></div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-bold text-amber-600 uppercase tracking-wider">📌 Требуют действия / С заметками</p>
+            <p id="stat-notes-count" class="text-2xl font-black text-amber-600 mt-1">0 чел</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center"><i data-lucide="pin" class="w-5 h-5"></i></div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Собрано в кассу</p>
+            <p id="stat-collected" class="text-2xl font-black text-emerald-600 mt-1">0 сом</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><i data-lucide="coins" class="w-5 h-5"></i></div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Остаток долга (собрать)</p>
+            <p id="stat-debt" class="text-2xl font-black text-rose-600 mt-1">0 сом</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center"><i data-lucide="alert-circle" class="w-5 h-5"></i></div>
+        </div>
+      </div>
+
+      <!-- Filters & Search -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row gap-4 justify-between items-center mb-6">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+          <div class="relative w-full sm:w-72">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="searchInput" oninput="renderBookings()" placeholder="Поиск по ФИО, телефону, заметкам..." 
+                   class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 transition">
+          </div>
+          <!-- Tour Program Color Filter -->
+          <div class="relative shrink-0">
+            <select id="tourFilterSelect" onchange="setTourFilter(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+              <option value="all">🌈 Все туры (цветовая подсветка)</option>
+              <option value="mega">🏔️ Только «МЕГА АЛМАТЫ» (Голубой)</option>
+              <option value="ny">🎄 Только «Новогодний тур» (Зеленый)</option>
+              <option value="kolsay">🌊 Только «Кольсай & Чарын» (Бирюзовый)</option>
+              <option value="dubai">🇦🇪 Только «Дубай» (Золотой)</option>
+              <option value="vietnam">🇻🇳 Только «Вьетнам» (Розовый)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 overflow-x-auto w-full lg:w-auto custom-scrollbar pb-1 lg:pb-0 text-xs">
+          <button onclick="setStatusFilter('all')" class="status-btn px-3 py-1.5 rounded-lg font-bold bg-slate-900 text-white" data-status="all">Все статусы</button>
+          <button onclick="setStatusFilter('with_notes')" class="status-btn px-3 py-1.5 rounded-lg font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200" data-status="with_notes">📌 С заметками</button>
+          <button onclick="setStatusFilter('prepaid')" class="status-btn px-3 py-1.5 rounded-lg font-semibold text-slate-600 hover:bg-slate-100" data-status="prepaid">🟠 Предоплата</button>
+          <button onclick="setStatusFilter('paid')" class="status-btn px-3 py-1.5 rounded-lg font-semibold text-slate-600 hover:bg-slate-100" data-status="paid">🟢 Оплачено</button>
+          <button onclick="setStatusFilter('booked')" class="status-btn px-3 py-1.5 rounded-lg font-semibold text-slate-600 hover:bg-slate-100" data-status="booked">🔵 Только бронь</button>
+        </div>
+      </div>
+
+      <!-- Tourist Cards Grid -->
+      <div id="bookingsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="hidden text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200">
+        <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
+          <i data-lucide="user-plus" class="w-8 h-8"></i>
+        </div>
+        <h3 class="text-base font-semibold text-slate-800">Записей по этому фильтру нет</h3>
+        <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1">Нажмите «+ Быстро записать туриста», чтобы добавить запись.</p>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- VIEW 2: ALL TOURS CATALOG & PROGRAM BUILDER              -->
+  <!-- ======================================================== -->
+  <div id="viewCatalog" class="flex-grow flex flex-col hidden py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+      
+      <!-- AI Tour Assistant Banner -->
+      <div class="mb-6 p-5 bg-gradient-to-r from-violet-700 via-indigo-700 to-sky-700 rounded-3xl text-white shadow-xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-[11px] font-black uppercase tracking-wider">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300"></i> ИИ-Ассистент форматирования
+          </div>
+          <h3 class="text-lg font-black text-white">Автоматический перевод текста тура в формат сайта & CRM</h3>
+          <p class="text-xs text-indigo-100 max-w-2xl leading-relaxed">
+            Вам прислали текст программы в WhatsApp или Word от гида или партнера? Вставьте его «как есть» — ИИ сам выделит даты, цены (взрослый/детский), отель, тайминг по дням и включенные услуги.
+          </p>
+        </div>
+        <button onclick="openAiImportModal()" class="shrink-0 px-5 py-2.5 bg-white text-indigo-900 hover:bg-indigo-50 font-black text-xs sm:text-sm rounded-2xl shadow-lg transition flex items-center gap-2">
+          <i data-lucide="wand-2" class="w-4 h-4 text-indigo-600"></i> Вставить текст в ИИ-Ассистент
+        </button>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-xl font-black text-slate-900">Каталог и программы всех туров</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Создавайте новые туры, редактируйте цены и копируйте программы для отправки в WhatsApp.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="openAiImportModal()" class="inline-flex items-center gap-2 px-4 py-2 text-xs font-black text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-2xl transition">
+            <i data-lucide="sparkles" class="w-4 h-4 text-indigo-600"></i> ИИ-Импорт
+          </button>
+          <button onclick="openNewTourModal()" class="inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-2xl shadow-lg shadow-indigo-600/20 transition">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> + Создать вручную
+          </button>
+        </div>
+      </div>
+      <div id="catalogGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- VIEW 3: WHATSAPP SCRIPTS                                 -->
+  <!-- ======================================================== -->
+  <div id="viewWa" class="flex-grow flex flex-col hidden py-6">
+    <div class="max-w-3xl mx-auto px-4 w-full">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900">Готовые шаблоны сообщений для WhatsApp</h3>
+          <p class="text-xs text-slate-500">Нажмите кнопку, чтобы загрузить текст и скопировать туристу.</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          <button onclick="setScriptTemplate('mega_almaty')" class="p-3 rounded-2xl border border-cyan-200 bg-cyan-50/50 hover:border-cyan-500 hover:bg-cyan-50 text-left font-bold text-xs transition">
+            🏔️ 1. МЕГА АЛМАТЫ (8 000 сом)
+          </button>
+          <button onclick="setScriptTemplate('ny_almaty')" class="p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 text-left font-bold text-xs transition">
+            🎄 2. Новый Год в Алматы (16 900)
+          </button>
+          <button onclick="setScriptTemplate('mbank')" class="p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 text-left font-bold text-xs transition">
+            💳 3. Реквизиты (MBank)
+          </button>
+          <button onclick="setScriptTemplate('border')" class="p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 text-left font-bold text-xs transition">
+            🛂 4. Граница (КПП)
+          </button>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Текст сообщения:</label>
+          <textarea id="scriptText" rows="12" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-sans focus:outline-none focus:ring-2 focus:ring-emerald-500 leading-relaxed"></textarea>
+        </div>
+        <div class="flex items-center justify-between">
+          <button onclick="copyScriptText()" class="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition">
+            <i data-lucide="copy" class="w-4 h-4"></i> Скопировать в буфер обмена
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- MODAL: EDIT / FULL CLIENT CARD (С УМНЫМИ ЗАМЕТКАМИ)      -->
+  <!-- ======================================================== -->
+  <div id="editClientModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-100 custom-scrollbar p-6">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Редактировать карточку туриста</h2>
+          <p class="text-xs text-slate-500">Добавьте заметку («с детьми», «обдумывает»), чтобы ИИ сформировал ответ</p>
+        </div>
+        <button onclick="closeEditClientModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <form id="editClientForm" onsubmit="saveClientCard(event)" class="mt-4 space-y-4 text-xs">
+        <input type="hidden" id="ecId">
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ФИО туриста *</label>
+            <input type="text" id="ecName" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Телефон / WhatsApp *</label>
+            <input type="text" id="ecPhone" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Тур / Направление *</label>
+          <select id="ecTourSelect" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <!-- Populated via JS -->
+          </select>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Полная стоимость</label>
+            <input type="number" id="ecPriceClient" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Оплачено клиентом</label>
+            <input type="number" id="ecPaidAmount" required class="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl text-xs font-bold text-emerald-700">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Текущий статус</label>
+            <select id="ecStatus" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold">
+              <option value="booked">🔵 Только бронь</option>
+              <option value="prepaid">🟠 Предоплата</option>
+              <option value="paid">🟢 Оплачено 100%</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SMART NOTES BLOCK -->
+        <div class="p-3.5 bg-amber-50/70 rounded-2xl border border-amber-200 space-y-2">
+          <label class="block font-black text-amber-950 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+            <i data-lucide="pin" class="w-3.5 h-3.5 text-amber-600"></i> Заметка менеджера / Напоминание
+          </label>
+          <input type="text" id="ecNotes" placeholder="Напр. с двумя детьми уточнить стоимость или клиент обдумывает" class="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-900">
+
+          <!-- Quick tag buttons -->
+          <div class="flex flex-wrap gap-1.5 pt-1">
+            <span class="text-[10px] text-amber-800 font-bold self-center mr-1">Быстрые теги:</span>
+            <button type="button" onclick="setNoteTag('с двумя детьми уточнить стоимость')" class="px-2 py-1 rounded-lg bg-white border border-amber-300 text-amber-900 text-[10px] font-bold hover:bg-amber-100 transition">
+              👨‍👩‍👧‍👦 с двумя детьми
+            </button>
+            <button type="button" onclick="setNoteTag('клиент обдумывает, напомнить через 2 дня')" class="px-2 py-1 rounded-lg bg-white border border-amber-300 text-amber-900 text-[10px] font-bold hover:bg-amber-100 transition">
+              🤔 клиент обдумывает
+            </button>
+            <button type="button" onclick="setNoteTag('ждёт зарплату 25-го числа')" class="px-2 py-1 rounded-lg bg-white border border-amber-300 text-amber-900 text-[10px] font-bold hover:bg-amber-100 transition">
+              💵 ждёт зарплату 25-го
+            </button>
+            <button type="button" onclick="setNoteTag('просит скидку 500 сом на 2 места')" class="px-2 py-1 rounded-lg bg-white border border-amber-300 text-amber-900 text-[10px] font-bold hover:bg-amber-100 transition">
+              🏷️ просит скидку
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeEditClientModal()" class="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Отмена</button>
+          <button type="submit" class="px-5 py-2 font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md">Сохранить изменения</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- MODAL: SMART WHATSAPP DISPATCH                           -->
+  <!-- ======================================================== -->
+  <div id="waSendModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-100 p-6 space-y-4 text-xs custom-scrollbar">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-md shadow-emerald-500/20">
+            <i data-lucide="message-circle" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-black text-slate-900">Отправка в WhatsApp</h3>
+            <p id="waModalClientInfo" class="text-xs text-slate-500 font-mono">-</p>
+          </div>
+        </div>
+        <button onclick="closeWaSendModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Auto-copy toast alert -->
+      <div id="waAutoCopyAlert" class="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-2.5 text-emerald-950">
+        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5"></i>
+        <div class="text-[11px] leading-snug">
+          <span class="font-black text-emerald-900 block mb-0.5">Текст сообщения уже скопирован в буфер обмена!</span>
+          Номер отформатирован в международный стандарт <strong>+996...</strong>. Если в WhatsApp поле ввода сообщения окажется пустым — просто нажмите <kbd class="px-1.5 py-0.5 bg-white border border-emerald-300 rounded font-mono font-bold text-slate-800 shadow-xs">Ctrl + V</kbd>.
+        </div>
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="font-bold text-slate-700">Текст сообщения (можно отредактировать):</label>
+          <button type="button" onclick="copyWaModalText()" class="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-lg border border-emerald-200 transition">
+            <i data-lucide="copy" class="w-3 h-3"></i> Скопировать
+          </button>
+        </div>
+        <textarea id="waModalText" rows="7" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-sans focus:outline-none focus:ring-2 focus:ring-emerald-500 leading-relaxed"></textarea>
+      </div>
+
+      <div class="space-y-2 pt-2 border-t border-slate-100">
+        <button type="button" onclick="launchWhatsApp('app')" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+          <i data-lucide="external-link" class="w-4 h-4"></i> 💻 Открыть приложение WhatsApp на ПК
+        </button>
+        <button type="button" onclick="launchWhatsApp('web')" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-2xl transition flex items-center justify-center gap-2">
+          <i data-lucide="globe" class="w-4 h-4 text-slate-500"></i> 🌐 Открыть в браузере (WhatsApp Web)
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- MODAL: QUICK ENTRY -->
+  <div id="quickModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 p-6">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Быстрая запись туриста</h3>
+          <p class="text-xs text-slate-500">Заполнение занимает 15 секунд</p>
+        </div>
+        <button onclick="closeQuickModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <form id="quickForm" onsubmit="saveQuickBooking(event)" class="mt-4 space-y-3 text-xs">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ФИО туриста *</label>
+            <input type="text" id="qName" required placeholder="Азамат Ибраимов" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Телефон / WhatsApp *</label>
+            <input type="text" id="qPhone" required placeholder="0555 123 456" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Выберите тур *</label>
+          <select id="qTourSelect" onchange="onQuickTourChange()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-indigo-900"></select>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Стоимость</label>
+            <input type="number" id="qTotalPrice" oninput="calcQuickDebt()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Предоплата</label>
+            <input type="number" id="qPaidAmount" value="5000" oninput="calcQuickDebt()" class="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl text-xs font-bold text-emerald-700">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Долг:</label>
+            <div id="qDebtDisplay" class="px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-xs font-black text-amber-700 flex items-center">0 сом</div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Заметка менеджера (опционально)</label>
+          <input type="text" id="qNotes" placeholder="Напр. с двумя детьми или клиент обдумывает" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeQuickModal()" class="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Отмена</button>
+          <button type="submit" class="px-5 py-2 font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- MODAL: ADD PAYMENT -->
+  <div id="payModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-slate-100 p-6">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="text-sm font-bold text-slate-900">Внести оплату</h3>
+        <button onclick="closePayModal()" class="w-6 h-6 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+      </div>
+      <form onsubmit="saveExistingPayment(event)" class="mt-4 space-y-3 text-xs">
+        <input type="hidden" id="existPayId">
+        <div>
+          <span class="text-slate-400 block text-[10px] uppercase">Клиент:</span>
+          <p id="existPayClientName" class="font-bold text-slate-800 text-sm">-</p>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Сумма доплаты *</label>
+          <input type="number" id="existPaySum" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-emerald-700">
+        </div>
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" onclick="closePayModal()" class="px-3 py-1.5 text-slate-500 font-semibold">Отмена</button>
+          <button type="submit" class="px-4 py-2 font-bold text-white bg-emerald-600 rounded-xl">Зачислить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- MODAL: AI TOUR IMPORT & PARSER                           -->
+  <!-- ======================================================== -->
+  <div id="aiImportModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[94vh] overflow-y-auto shadow-2xl border border-slate-100 custom-scrollbar p-6">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white flex items-center justify-center shadow-md">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-base sm:text-lg font-black text-slate-900">ИИ-Ассистент форматирования туров</h2>
+            <p class="text-xs text-slate-500">Авто-разбор любого сырого текста из WhatsApp/Telegram в карточку сайта</p>
+          </div>
+        </div>
+        <button onclick="closeAiImportModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-4 text-xs">
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="font-bold text-slate-700">Вставьте сюда сырой текст программы (как прислал менеджер или гид):</label>
+            <div class="flex gap-1.5">
+              <button type="button" onclick="pasteSampleMegaTour()" class="text-[10px] font-bold text-cyan-800 bg-cyan-50 hover:bg-cyan-100 px-2 py-1 rounded-lg transition border border-cyan-200">
+                📋 Пример: МЕГА АЛМАТЫ
+              </button>
+              <button type="button" onclick="document.getElementById('aiRawText').value=''" class="text-[10px] text-slate-400 hover:text-slate-600 px-1.5 py-1">
+                Очистить
+              </button>
+            </div>
+          </div>
+          <textarea id="aiRawText" rows="9" placeholder="Вставьте сюда сообщение WhatsApp с программой тура, ценами и датами..." 
+                    class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-sans focus:outline-none focus:ring-2 focus:ring-violet-500 leading-relaxed"></textarea>
+        </div>
+
+        <button type="button" onclick="runAiTourParser()" class="w-full py-3 bg-gradient-to-r from-violet-600 via-indigo-600 to-sky-600 hover:from-violet-700 hover:to-sky-700 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg shadow-indigo-600/20 transition flex items-center justify-center gap-2">
+          <i data-lucide="wand-2" class="w-4 h-4"></i> ⚡ Распознать и адаптировать под сайт & CRM
+        </button>
+
+        <!-- Preview of Extracted Fields -->
+        <div id="aiParsedPreview" class="hidden p-4 rounded-2xl bg-violet-50/60 border border-violet-200 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-black uppercase text-violet-900 flex items-center gap-1.5">
+              <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i> Результат распознавания ИИ:
+            </span>
+            <span class="text-[10px] text-violet-600 bg-white px-2 py-0.5 rounded-full border border-violet-200 font-bold">Готово к сохранению</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-[11px]">
+            <div class="bg-white p-2.5 rounded-xl border border-violet-100">
+              <span class="text-slate-400 block text-[9px] uppercase font-bold">Название тура:</span>
+              <p id="prevTitle" class="font-black text-slate-900 mt-0.5">-</p>
+            </div>
+            <div class="bg-white p-2.5 rounded-xl border border-violet-100">
+              <span class="text-slate-400 block text-[9px] uppercase font-bold">Стоимость:</span>
+              <p id="prevPrice" class="font-black text-emerald-600 mt-0.5">-</p>
+            </div>
+            <div class="bg-white p-2.5 rounded-xl border border-violet-100">
+              <span class="text-slate-400 block text-[9px] uppercase font-bold">Даты & Сбор:</span>
+              <p id="prevDates" class="font-medium text-slate-800 mt-0.5">-</p>
+            </div>
+            <div class="bg-white p-2.5 rounded-xl border border-violet-100">
+              <span class="text-slate-400 block text-[9px] uppercase font-bold">Отель:</span>
+              <p id="prevHotel" class="font-medium text-slate-800 mt-0.5">-</p>
+            </div>
+          </div>
+
+          <div class="bg-white p-3 rounded-xl border border-violet-100">
+            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-1">Программа тура (адаптированная):</span>
+            <p id="prevProgram" class="text-slate-700 whitespace-pre-line text-[11px] max-h-36 overflow-y-auto custom-scrollbar">-</p>
+          </div>
+
+          <div class="bg-white p-3 rounded-xl border border-violet-100">
+            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-1">Что входит в стоимость:</span>
+            <p id="prevIncluded" class="text-slate-700 whitespace-pre-line text-[11px]">-</p>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-2 border-t border-violet-200/60">
+            <button type="button" onclick="applyParsedToManualForm()" class="px-4 py-2 font-bold text-violet-700 hover:bg-violet-100 rounded-xl transition">
+              Открыть в редакторе
+            </button>
+            <button type="button" onclick="saveParsedTourDirectly()" class="px-5 py-2 font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition flex items-center gap-1.5">
+              <i data-lucide="save" class="w-3.5 h-3.5"></i> Добавить тур в Каталог
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- MODAL: CREATE TOUR -->
+  <div id="tourModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-100 custom-scrollbar p-6">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h2 id="tourModalTitle" class="text-base font-bold text-slate-900">Создать тур</h2>
+        <button onclick="closeTourModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <form id="tourForm" onsubmit="saveTourProduct(event)" class="mt-4 space-y-3 text-xs">
+        <input type="hidden" id="tourProdId">
+        <div><label class="block font-bold text-slate-700 mb-1">Название тура *</label><input type="text" id="tpTitle" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block font-bold text-slate-700 mb-1">Страна *</label><select id="tpCountry" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"><option value="kz">🇰🇿 Казахстан</option><option value="uz">🇺🇿 Узбекистан</option><option value="uae">🇦🇪 Дубай</option></select></div>
+          <div><label class="block font-bold text-slate-700 mb-1">Даты *</label><input type="text" id="tpDates" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block font-bold text-slate-700 mb-1">Стоимость с клиента *</label><input type="number" id="tpPrice" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"></div>
+          <div><label class="block font-bold text-slate-700 mb-1">Отель *</label><input type="text" id="tpHotel" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"></div>
+        </div>
+        <div><label class="block font-bold text-slate-700 mb-1">Программа тура *</label><textarea id="tpProgram" rows="5" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs"></textarea></div>
+        <div><label class="block font-bold text-slate-700 mb-1">Что входит *</label><textarea id="tpIncluded" rows="3" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs"></textarea></div>
+        <div class="pt-3 border-t border-slate-100 flex justify-end gap-2"><button type="button" onclick="closeTourModal()" class="px-4 py-2 font-semibold text-slate-600">Отмена</button><button type="submit" class="px-5 py-2 font-bold text-white bg-indigo-600 rounded-xl">Сохранить</button></div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT ENGINE                                        -->
+  <!-- ======================================================== -->
+  <script>
+    // 1. TOUR CATALOG
+    const baseCatalog = [
+      {
+        id: "tour_mega_almaty",
+        country: "kz",
+        title: "🏔️ Тур «МЕГА АЛМАТЫ» (2 дня / 1 ночь)",
+        hotel: "Отель 4★ (1 ночь)",
+        dates: "Каждые выходные (сбор 03:30, выезд 04:00)",
+        price: 8000,
+        priceChild: 7500,
+        cost: 6000,
+        currency: "KGS",
+        meetingPoint: "Парковка стадиона «Спартак» (ул. Тоголок Молдо, 17 / Рыскулова)",
+        program: `📍 Место сбора: Парковка стадиона «Спартак» (ул. Тоголок Молдо, 17 / Рыскулова)
+🕞 Сбор группы: 03:30 | 🚌 Выезд: 04:00
+💰 Стоимость: Взрослые — 8 000 сом | Дети 6–12 лет — 7 500 сом | До 5 лет — бесплатно (без отдельного места)
+
+1 ДЕНЬ:
+• Выезд из Бишкека
+• Завтрак в ресторане казахской кухни «Бауырдак»
+• Поездка на метро Алматы
+• Экскурсия по центру Алматы:
+  — Парк 28 панфиловцев
+  — Вознесенский собор
+  — Музей музыкальных инструментов
+• Фирменный магазин фабрики «Рахат»
+• Центральный парк (по желанию — зоопарк)
+• Заселение в отель 4★
+• Вечерняя экскурсия на Кок-Тобе
+
+2 ДЕНЬ:
+• Завтрак (шведский стол)
+• Канатная дорога Медеу–Шымбулак
+• Посещение Арт-музея
+• Обзорная экскурсия по городу
+• ТРЦ MEGA ALMATY (шопинг)
+• Возвращение в Бишкек`,
+        included: `Трансфер Бишкек–Алматы–Бишкек, сопровождение гида, проживание в отеле 4★ (1 ночь), завтрак «шведский стол», поездка на метро Алматы, организация тура.`
+      },
+      {
+        id: "tour_ny_almaty",
+        country: "kz",
+        title: "🎄 Новогодний тур в Алматы (31 дек - 2 янв)",
+        hotel: "Grand Milldam Hotel 4★ (2 ночи)",
+        dates: "31 декабря — 2 января",
+        price: 16900,
+        cost: 12500,
+        currency: "KGS",
+        program: `🎉 Приезд в город, который умеет праздновать красиво!
+04:30–05:00 — выезд из Бишкека.
+🍽️ Завтрак в “Qaganat”
+🚇 Спуск в алматинское метро (мрамор, люстры, стиль)
+🏛️ Парк 28 панфиловцев, Вознесенский собор, Музей музыкальных инструментов
+🍬 Фирменный магазин фабрики «Рахат» (дегустация и свежий шоколад!)
+🌳 Центральный парк
+🏨 Заселение в стильный отель Grand Milldam 4★ (2 ночи)
+🎆 Празднование Нового Года: комплимент на новогодний стол, Дед Мороз и Снегурочка, подарки 🎁, welcome drinks 🍹.`,
+        included: `Транспорт Бишкек-Алматы-Бишкек, проживание в отеле 4* (2 ночи), гид, завтраки, метро, комплимент на новогодний стол, Дед Мороз со Снегурочкой, подарки, welcome drinks.`
+      },
+      {
+        id: "tour_kolsay",
+        country: "kz",
+        title: "Кольсай, Каинды & Чарынский каньон (2 дня)",
+        hotel: "Уютный гостевой дом на Кольсае",
+        dates: "Каждую субботу (выезд в 06:00)",
+        price: 4500,
+        cost: 3200,
+        currency: "KGS",
+        program: `Чарынский каньон (Долина замков), высокогорные озера Кольсай и Каинды, ночевка в гостевом доме с ужином.`,
+        included: `Проезд на Mercedes Sprinter, услуги гида, экосборы, проживание в гостевом доме.`
+      },
+      {
+        id: "tour_dubai",
+        country: "uae",
+        title: "🇦🇪 Дубай: Прямой вылет из Бишкека (7 ночей)",
+        hotel: "Citymax Hotel Bur Dubai 3★ / Aloft Palm Jumeirah 4★",
+        dates: "Вылеты каждую среду и субботу",
+        price: 52000,
+        cost: 44000,
+        currency: "KGS",
+        program: `Прямой рейс Бишкек — Дубай — Бишкек (FlyDubai), трансфер в отель, экскурсия по городу с подъемом на Burj Khalifa, сафари в пустыне на джипах. Безвизовый въезд до 30 дней.`,
+        included: `Авиаперелет туда-обратно, проживание 7 ночей, завтраки, медицинская страховка, групповой трансфер.`
+      },
+      {
+        id: "tour_vietnam",
+        country: "vn",
+        title: "🇻🇳 Вьетнам: Тропический остров Фукуок (8 ночей)",
+        hotel: "Novotel Phu Quoc Resort 5★ (Первая линия)",
+        dates: "5 декабря, 18 декабря, 10 января",
+        price: 94000,
+        cost: 81000,
+        currency: "KGS",
+        program: `Прямой чартер на о. Фукуок. Белоснежные пляжи Сиамского залива, канатная дорога Hon Thom, сафари-парк Vinpearl Safari. Без визы для граждан КР до 30 дней.`,
+        included: `Прямой чартерный перелет, багаж 20 кг, трансфер, проживание в отеле 5*, завтраки «шведский стол», медстраховка.`
+      }
+    ];
+
+    // Auto-sync catalog with baseCatalog
+    let catalog = JSON.parse(localStorage.getItem('app_tours_catalog')) || [];
+    if (!catalog.some(t => t.id === 'tour_mega_almaty' || (t.title && t.title.includes('МЕГА ALMATY') || t.title.includes('МЕГА АЛМАТЫ')))) {
+      // Prepend Mega Almaty so it is immediately visible
+      catalog = baseCatalog;
+      localStorage.setItem('app_tours_catalog', JSON.stringify(catalog));
+    }
+
+    // 2. BOOKINGS DATA WITH SMART NOTES & COLOR THEMES
+    const defaultBookings = [
+      {
+        id: "tourist_mega_1",
+        clientName: "Нурбек Токтосунов (2 чел)",
+        clientPhone: "0702 44 55 66",
+        tourId: "tour_mega_almaty",
+        tourRoute: "🏔️ Тур «МЕГА АЛМАТЫ» (2 дня / 1 ночь)",
+        currency: "KGS",
+        priceClient: 15500, // 1 взрослый (8000) + 1 ребенок 8 лет (7500)
+        paidAmount: 5000,
+        priceCost: 11000,
+        status: "prepaid",
+        notes: "1 взрослый + ребенок 8 лет (7500 сом). Посадка на стадионе Спартак в 03:30"
+      },
+      {
+        id: "tourist_1",
+        clientName: "Азамат Ибраимов",
+        clientPhone: "0555 77 88 99",
+        tourId: "tour_ny_almaty",
+        tourRoute: "🎄 Новогодний тур в Алматы (31 дек - 2 янв)",
+        currency: "KGS",
+        priceClient: 16900,
+        paidAmount: 5000,
+        priceCost: 12500,
+        status: "prepaid",
+        notes: "с двумя детьми (7 и 10 лет) уточнить стоимость доп. мест в Grand Milldam"
+      },
+      {
+        id: "tourist_2",
+        clientName: "Алина Касымова",
+        clientPhone: "0700 12 34 56",
+        tourId: "tour_ny_almaty",
+        tourRoute: "🎄 Новогодний тур в Алматы (31 дек - 2 янв)",
+        currency: "KGS",
+        priceClient: 16900,
+        paidAmount: 0,
+        priceCost: 12500,
+        status: "booked",
+        notes: "клиент обдумывает, напомнить через 2 дня (советуется с подругой)"
+      },
+      {
+        id: "tourist_3",
+        clientName: "Бакыт Асанов (2 места)",
+        clientPhone: "0770 99 88 77",
+        tourId: "tour_ny_almaty",
+        currency: "KGS",
+        priceClient: 33800,
+        paidAmount: 33800,
+        priceCost: 25000,
+        status: "paid",
+        notes: "оплачено 100%, места в начале автобуса"
+      }
+    ];
+
+    let bookings = JSON.parse(localStorage.getItem('almaty_ny_bookings')) || [];
+    if (!bookings.some(b => b.tourRoute && b.tourRoute.includes('МЕГА'))) {
+      bookings = defaultBookings;
+      localStorage.setItem('almaty_ny_bookings', JSON.stringify(bookings));
+    }
+
+    let currentStatusFilter = 'all';
+    let currentTourFilter = 'all';
+
+    // ========================================================
+    // FIREBASE CLOUD REALTIME SYNC (MULTI-MANAGER)
+    // ========================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyDGnOwInzUQt5zESB8pnSoYEEBnziQSSPw",
+      authDomain: "outbound-crm-5fbd9.firebaseapp.com",
+      projectId: "outbound-crm-5fbd9",
+      storageBucket: "outbound-crm-5fbd9.firebasestorage.app",
+      messagingSenderId: "588367513293",
+      appId: "1:588367513293:web:56ef51f6c9665255c90b84",
+      measurementId: "G-T8QWFS8ZE4"
+    };
+
+    let db = null;
+
+    function updateCloudStatus(status, text) {
+      const badge = document.getElementById('cloudStatusBadge');
+      if (!badge) return;
+      if (status === 'online') {
+        badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-xs';
+        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ${text}`;
+      } else if (status === 'error') {
+        badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 shadow-xs';
+        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> ${text}`;
+      } else {
+        badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-xs';
+        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> ${text}`;
+      }
+    }
+
+    try {
+      if (typeof firebase !== 'undefined') {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+      }
+    } catch (e) {
+      console.warn("Firebase init error:", e);
+    }
+
+    function cloudSaveBooking(b) {
+      if (!db) return;
+      const cleanB = {
+        id: b.id || ('tourist_' + Date.now()),
+        clientName: b.clientName || '',
+        clientPhone: b.clientPhone || '',
+        tourRoute: b.tourRoute || '',
+        currency: b.currency || 'KGS',
+        priceClient: Number(b.priceClient) || 0,
+        paidAmount: Number(b.paidAmount) || 0,
+        priceCost: Number(b.priceCost) || 0,
+        status: b.status || 'booked',
+        notes: b.notes || '',
+        manager: b.manager || 'Тынчтык',
+        updatedAt: b.updatedAt || Date.now()
+      };
+      if (b.tourId) cleanB.tourId = b.tourId;
+      db.collection('bookings').doc(cleanB.id).set(cleanB, { merge: true })
+        .then(() => updateCloudStatus('online', 'Облако: Синхронизировано'))
+        .catch(err => {
+          console.error("Cloud save booking err:", err);
+          updateCloudStatus('error', 'Сбой связи (сохранено локально)');
+        });
+    }
+
+    function cloudDeleteBooking(id) {
+      if (!db) return;
+      db.collection('bookings').doc(id).delete()
+        .then(() => updateCloudStatus('online', 'Облако: Синхронизировано'))
+        .catch(err => console.error("Cloud delete booking err:", err));
+    }
+
+    function cloudSaveTour(t) {
+      if (!db) return;
+      const cleanT = {
+        id: t.id || ('tour_' + Date.now()),
+        country: t.country || 'kz',
+        title: t.title || '',
+        hotel: t.hotel || '',
+        dates: t.dates || '',
+        price: Number(t.price) || 0,
+        priceChild: Number(t.priceChild) || 0,
+        cost: Number(t.cost) || 0,
+        currency: t.currency || 'KGS',
+        program: t.program || '',
+        included: t.included || '',
+        updatedAt: t.updatedAt || Date.now()
+      };
+      db.collection('catalog').doc(cleanT.id).set(cleanT, { merge: true })
+        .then(() => updateCloudStatus('online', 'Облако: Синхронизировано'))
+        .catch(err => console.error("Cloud save tour err:", err));
+    }
+
+    function cloudDeleteTour(id) {
+      if (!db) return;
+      db.collection('catalog').doc(id).delete()
+        .then(() => updateCloudStatus('online', 'Облако: Синхронизировано'))
+        .catch(err => console.error("Cloud delete tour err:", err));
+    }
+
+    let isCatalogLoadedFromCloud = false;
+    let isBookingsLoadedFromCloud = false;
+
+    function initCloudSync() {
+      if (!db) {
+        updateCloudStatus('error', 'Локальный режим (оффлайн)');
+        return;
+      }
+      updateCloudStatus('connecting', 'Подключение к облаку...');
+
+      // Realtime listener for bookings
+      db.collection('bookings').onSnapshot(snapshot => {
+        if (snapshot.empty && !isBookingsLoadedFromCloud) {
+          defaultBookings.forEach(b => cloudSaveBooking(b));
+        } else if (!snapshot.empty) {
+          const list = [];
+          snapshot.forEach(doc => list.push(doc.data()));
+          list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+          bookings = list;
+          localStorage.setItem('almaty_ny_bookings', JSON.stringify(bookings));
+          renderBookings();
+          updateStats();
+        }
+        isBookingsLoadedFromCloud = true;
+        updateCloudStatus('online', 'Облако: Синхронизировано');
+      }, err => {
+        console.error("Firestore bookings sync error:", err);
+        updateCloudStatus('error', 'Сбой связи с базой');
+      });
+
+      // Realtime listener for catalog
+      db.collection('catalog').onSnapshot(snapshot => {
+        if (snapshot.empty && !isCatalogLoadedFromCloud) {
+          baseCatalog.forEach(t => cloudSaveTour(t));
+        } else if (!snapshot.empty) {
+          const list = [];
+          snapshot.forEach(doc => list.push(doc.data()));
+          list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+          catalog = list;
+          localStorage.setItem('app_tours_catalog', JSON.stringify(catalog));
+          renderCatalog();
+          updateStats();
+        }
+        isCatalogLoadedFromCloud = true;
+        updateCloudStatus('online', 'Облако: Синхронизировано');
+      }, err => {
+        console.error("Firestore catalog sync error:", err);
+        updateCloudStatus('error', 'Сбой связи с базой');
+      });
+    }
+
+    function saveToStorage() {
+      localStorage.setItem('almaty_ny_bookings', JSON.stringify(bookings));
+      renderBookings();
+      updateStats();
+    }
+
+    // ----------------------------------------------------
+    // COLOR CODING HELPER FOR TOUR PROGRAMS
+    // ----------------------------------------------------
+    function getTourTheme(tourRoute) {
+      const t = (tourRoute || '').toLowerCase();
+      if (t.includes('мега') || t.includes('mega')) {
+        return {
+          id: 'mega',
+          tag: '🏔️ МЕГА АЛМАТЫ',
+          badgeClass: 'bg-cyan-100 text-cyan-950 border border-cyan-300 font-black',
+          cardBorder: 'border-l-[6px] border-l-cyan-500 bg-gradient-to-br from-cyan-50/40 via-white to-white',
+          titleColor: 'text-cyan-800'
+        };
+      } else if (t.includes('новогодн') || t.includes('31 дек')) {
+        return {
+          id: 'ny',
+          tag: '🎄 НОВОГОДНИЙ АЛМАТЫ',
+          badgeClass: 'bg-emerald-100 text-emerald-950 border border-emerald-300 font-black',
+          cardBorder: 'border-l-[6px] border-l-emerald-500 bg-gradient-to-br from-emerald-50/30 via-white to-white',
+          titleColor: 'text-emerald-800'
+        };
+      } else if (t.includes('кольсай') || t.includes('чарын')) {
+        return {
+          id: 'kolsay',
+          tag: '🌊 КОЛЬСАЙ & ЧАРЫН',
+          badgeClass: 'bg-teal-100 text-teal-950 border border-teal-300 font-black',
+          cardBorder: 'border-l-[6px] border-l-teal-500 bg-gradient-to-br from-teal-50/30 via-white to-white',
+          titleColor: 'text-teal-800'
+        };
+      } else if (t.includes('дубай') || t.includes('dubai')) {
+        return {
+          id: 'dubai',
+          tag: '🇦🇪 ДУБАЙ АВИА',
+          badgeClass: 'bg-amber-100 text-amber-950 border border-amber-300 font-black',
+          cardBorder: 'border-l-[6px] border-l-amber-500 bg-gradient-to-br from-amber-50/30 via-white to-white',
+          titleColor: 'text-amber-800'
+        };
+      } else if (t.includes('вьетнам') || t.includes('фукуок')) {
+        return {
+          id: 'vietnam',
+          tag: '🇻🇳 ВЬЕТНАМ',
+          badgeClass: 'bg-rose-100 text-rose-950 border border-rose-300 font-black',
+          cardBorder: 'border-l-[6px] border-l-rose-500 bg-gradient-to-br from-rose-50/30 via-white to-white',
+          titleColor: 'text-rose-800'
+        };
+      } else {
+        return {
+          id: 'other',
+          tag: '🧳 ТУР',
+          badgeClass: 'bg-indigo-100 text-indigo-950 border border-indigo-300 font-black',
+          cardBorder: 'border-l-[6px] border-l-indigo-500 bg-white',
+          titleColor: 'text-indigo-800'
+        };
+      }
+    }
+
+    function switchView(view) {
+      document.getElementById('viewCrm').classList.add('hidden');
+      document.getElementById('viewCatalog').classList.add('hidden');
+      document.getElementById('viewWa').classList.add('hidden');
+
+      document.getElementById('tabBtnCrm').className = "px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
+      document.getElementById('tabBtnCatalog').className = "px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
+      document.getElementById('tabBtnWa').className = "px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
+
+      if (view === 'crm') {
+        document.getElementById('viewCrm').classList.remove('hidden');
+        document.getElementById('tabBtnCrm').className = "px-3.5 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm transition flex items-center gap-1.5";
+        renderBookings();
+        updateStats();
+      } else if (view === 'catalog') {
+        document.getElementById('viewCatalog').classList.remove('hidden');
+        document.getElementById('tabBtnCatalog').className = "px-3.5 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm transition flex items-center gap-1.5";
+        renderCatalog();
+      } else {
+        document.getElementById('viewWa').classList.remove('hidden');
+        document.getElementById('tabBtnWa').className = "px-3.5 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm transition flex items-center gap-1.5";
+        setScriptTemplate('mega_almaty');
+      }
+      lucide.createIcons();
+    }
+
+    function setStatusFilter(st) {
+      currentStatusFilter = st;
+      document.querySelectorAll('.status-btn').forEach(btn => {
+        if (btn.getAttribute('data-status') === st) {
+          btn.className = "status-btn px-3 py-1.5 rounded-lg font-bold bg-slate-900 text-white";
+        } else {
+          btn.className = "status-btn px-3 py-1.5 rounded-lg font-semibold text-slate-600 hover:bg-slate-100";
+        }
+      });
+      renderBookings();
+    }
+
+    function setTourFilter(val) {
+      currentTourFilter = val;
+      renderBookings();
+    }
+
+    function updateStats() {
+      document.getElementById('stat-total').innerText = bookings.length + ' чел';
+      document.getElementById('stat-notes-count').innerText = bookings.filter(b => b.notes && b.notes.trim() !== '').length + ' чел';
+
+      let collected = 0;
+      let totalDebt = 0;
+
+      bookings.forEach(b => {
+        const clientPrice = parseFloat(b.priceClient) || 0;
+        const paid = parseFloat(b.paidAmount) || 0;
+        collected += paid;
+        totalDebt += Math.max(0, clientPrice - paid);
+      });
+
+      document.getElementById('stat-collected').innerText = collected.toLocaleString() + ' сом';
+      document.getElementById('stat-debt').innerText = totalDebt.toLocaleString() + ' сом';
+    }
+
+    function renderBookings() {
+      const grid = document.getElementById('bookingsGrid');
+      const empty = document.getElementById('emptyState');
+      const search = document.getElementById('searchInput').value.toLowerCase().trim();
+
+      grid.innerHTML = '';
+
+      const filtered = bookings.filter(b => {
+        let matchesStatus = true;
+        if (currentStatusFilter === 'with_notes') {
+          matchesStatus = b.notes && b.notes.trim() !== '';
+        } else if (currentStatusFilter !== 'all') {
+          matchesStatus = (b.status === currentStatusFilter);
+        }
+
+        let matchesTour = true;
+        if (currentTourFilter !== 'all') {
+          const theme = getTourTheme(b.tourRoute);
+          matchesTour = (theme.id === currentTourFilter);
+        }
+
+        const matchesSearch = !search || 
+          b.clientName.toLowerCase().includes(search) || 
+          b.clientPhone.toLowerCase().includes(search) || 
+          (b.notes && b.notes.toLowerCase().includes(search)) ||
+          b.tourRoute.toLowerCase().includes(search);
+
+        return matchesStatus && matchesTour && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        empty.classList.remove('hidden');
+      } else {
+        empty.classList.add('hidden');
+        filtered.forEach(b => {
+          const theme = getTourTheme(b.tourRoute);
+          const clientPrice = parseFloat(b.priceClient) || 0;
+          const paid = parseFloat(b.paidAmount) || 0;
+          const debt = Math.max(0, clientPrice - paid);
+
+          let statusBadge = `<span class="px-2 py-0.5 rounded-lg font-bold text-[10px] bg-sky-100 text-sky-800">🔵 Только бронь</span>`;
+          if (b.status === 'prepaid') {
+            statusBadge = `<span class="px-2 py-0.5 rounded-lg font-bold text-[10px] bg-amber-100 text-amber-900 border border-amber-200">🟠 Предоплата</span>`;
+          } else if (b.status === 'paid') {
+            statusBadge = `<span class="px-2 py-0.5 rounded-lg font-bold text-[10px] bg-emerald-100 text-emerald-900 border border-emerald-200">🟢 Оплачено 100%</span>`;
+          }
+
+          const card = document.createElement('div');
+          card.className = `rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between ${theme.cardBorder}`;
+          card.innerHTML = `
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="px-2 py-0.5 rounded-lg text-[10px] ${theme.badgeClass}">${theme.tag}</span>
+                  ${statusBadge}
+                </div>
+                <button onclick="openEditClientModal('${b.id}')" title="Редактировать карточку и заметки" class="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-md transition">
+                  <i data-lucide="edit-2" class="w-3 h-3"></i> Редактировать
+                </button>
+              </div>
+
+              <h4 class="text-xs font-black ${theme.titleColor} leading-snug">${b.tourRoute}</h4>
+              <h3 class="text-base font-black text-slate-900 mt-1">${b.clientName}</h3>
+              <p class="text-xs text-slate-500 font-mono flex items-center gap-1.5 mt-0.5">
+                <i data-lucide="phone" class="w-3.5 h-3.5 text-slate-400"></i> ${b.clientPhone}
+              </p>
+
+              <!-- SMART NOTE STICKER -->
+              ${b.notes && b.notes.trim() !== '' ? `
+                <div class="mt-3 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 text-xs flex items-start gap-2 shadow-xs">
+                  <i data-lucide="pin" class="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5"></i>
+                  <div>
+                    <span class="text-[10px] font-black uppercase text-amber-800 block">Заметка менеджера:</span>
+                    <p class="font-medium leading-snug">${b.notes}</p>
+                  </div>
+                </div>
+              ` : `
+                <button onclick="openEditClientModal('${b.id}')" class="mt-3 w-full py-1.5 text-left px-2.5 rounded-xl border border-dashed border-slate-200 text-slate-400 hover:border-amber-300 hover:text-amber-800 text-[11px] transition flex items-center gap-1.5">
+                  <i data-lucide="plus" class="w-3 h-3"></i> Добавить заметку («с детьми», «обдумывает»)...
+                </button>
+              `}
+
+              <!-- Finance breakdown -->
+              <div class="mt-3 p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5 text-xs">
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-500">Стоимость:</span>
+                  <span class="font-black text-slate-900">${clientPrice.toLocaleString()} сом</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-500">Оплачено:</span>
+                  <span class="font-bold text-emerald-600">${paid.toLocaleString()} сом</span>
+                </div>
+                <div class="flex justify-between items-center pt-1 border-t border-slate-200">
+                  <span class="font-bold text-slate-600">Остаток:</span>
+                  <span class="font-black ${debt > 0 ? 'text-rose-600' : 'text-emerald-600'}">
+                    ${debt > 0 ? debt.toLocaleString() + ' сом' : '✅ Оплачено'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              <button onclick="openPayModal('${b.id}')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-sm">
+                <i data-lucide="credit-card" class="w-4 h-4"></i> Оплата
+              </button>
+              
+              <!-- Smart WhatsApp button (incorporates the note!) -->
+              <button onclick="sendSmartAiWhatsApp('${b.id}')" title="Отправить умное сообщение в WhatsApp с учетом заметки" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-black text-emerald-950 bg-emerald-100 hover:bg-emerald-200 rounded-xl border border-emerald-300 transition shadow-sm">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-700"></i> WhatsApp
+              </button>
+
+              <button onclick="deleteBooking('${b.id}')" title="Удалить" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-400 flex items-center justify-center transition">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+      }
+      lucide.createIcons();
+    }
+
+    // ----------------------------------------------------
+    // EDIT CLIENT CARD & NOTES
+    // ----------------------------------------------------
+    let currentEditBooking = null;
+
+    function openEditClientModal(id) {
+      currentEditBooking = bookings.find(x => x.id === id);
+      if (!currentEditBooking) return;
+
+      const b = currentEditBooking;
+      document.getElementById('ecId').value = b.id;
+      document.getElementById('ecName').value = b.clientName;
+      document.getElementById('ecPhone').value = b.clientPhone;
+      document.getElementById('ecPriceClient').value = b.priceClient;
+      document.getElementById('ecPaidAmount').value = b.paidAmount;
+      document.getElementById('ecStatus').value = b.status;
+      document.getElementById('ecNotes').value = b.notes || '';
+
+      const select = document.getElementById('ecTourSelect');
+      select.innerHTML = '';
+      catalog.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.title;
+        opt.innerText = `${t.title} (${t.price.toLocaleString()} сом)`;
+        if (t.title === b.tourRoute) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      document.getElementById('editClientModal').classList.remove('hidden');
+    }
+
+    function closeEditClientModal() {
+      document.getElementById('editClientModal').classList.add('hidden');
+    }
+
+    function setNoteTag(tagText) {
+      const input = document.getElementById('ecNotes');
+      if (input.value.trim() === '') {
+        input.value = tagText;
+      } else {
+        input.value += '; ' + tagText;
+      }
+    }
+
+    function saveClientCard(e) {
+      e.preventDefault();
+      if (!currentEditBooking) return;
+
+      currentEditBooking.clientName = document.getElementById('ecName').value.trim();
+      currentEditBooking.clientPhone = document.getElementById('ecPhone').value.trim();
+      currentEditBooking.tourRoute = document.getElementById('ecTourSelect').value;
+      currentEditBooking.priceClient = parseFloat(document.getElementById('ecPriceClient').value) || 0;
+      currentEditBooking.paidAmount = parseFloat(document.getElementById('ecPaidAmount').value) || 0;
+      currentEditBooking.status = document.getElementById('ecStatus').value;
+      currentEditBooking.notes = document.getElementById('ecNotes').value.trim();
+      currentEditBooking.updatedAt = Date.now();
+
+      saveToStorage();
+      if (typeof cloudSaveBooking === 'function') cloudSaveBooking(currentEditBooking);
+      closeEditClientModal();
+    }
+
+    // ----------------------------------------------------
+    // SMART AI WHATSAPP MESSAGE GENERATOR (READS NOTES!)
+    // ----------------------------------------------------
+    function cleanWhatsAppPhone(phone) {
+      let p = (phone || '').replace(/[^0-9]/g, '');
+      if (p.startsWith('0') && p.length === 10) {
+        // e.g. 0700208413 -> 996700208413
+        p = '996' + p.substring(1);
+      } else if (p.length === 9) {
+        // e.g. 700208413 -> 996700208413
+        p = '996' + p;
+      } else if (p.startsWith('8') && p.length === 11) {
+        // Kazakhstan/Russia 87... -> 77...
+        p = '7' + p.substring(1);
+      }
+      return p;
+    }
+
+    let currentWaTarget = null;
+
+    function sendSmartAiWhatsApp(id) {
+      const b = bookings.find(x => x.id === id);
+      if (!b) return;
+
+      const name = b.clientName.split(' ')[0] || 'Здравствуйте';
+      const cleanPhone = cleanWhatsAppPhone(b.clientPhone);
+      const note = (b.notes || '').toLowerCase();
+      const debt = Math.max(0, b.priceClient - b.paidAmount);
+      const isMega = (b.tourRoute || '').includes('МЕГА') || (b.tourRoute || '').includes('MEGA');
+
+      let text = '';
+
+      // 1. Note about CHILDREN
+      if (note.includes('дет') || note.includes('ребен') || note.includes('двумя детьми')) {
+        if (isMega) {
+          text = `Здравствуйте, ${name}! 👨‍👩‍👧‍👦\n\nПо туру «МЕГА АЛМАТЫ» уточняем по детям:\n• Для детей 6–12 лет стоимость со скидкой — 7 500 сом (с отдельным местом и завтраком).\n• Дети до 5 лет — бесплатно (без отдельного места в автобусе).\n\nВыезд в эту субботу в 04:00 (сбор 03:30 на стадионе Спартак). Закрепить места за вами и детками? 🙌`;
+        } else {
+          text = `Здравствуйте, ${name}! 👨‍👩‍👧‍👦\n\nПо вашему запросу уточнили условия по Новогоднему туру в Алматы для вашей семьи с детьми:\n• В отеле Grand Milldam 4★ для детей предоставляются доп. места (номер категории Family/Deluxe).\n• Для детей также включены подарки 🎁, поздравления Деда Мороза со Снегурочкой и сладкий стол!\n\nПодсказать окончательный расчет со скидками на детей? Места пока держим за вами! 🙌`;
+        }
+      } 
+      // 2. Note about CLIENT THINKING / CONSIDERING
+      else if (note.includes('обдумывает') || note.includes('думает') || note.includes('советуется')) {
+        text = `Здравствуйте, ${name}! ☀️\n\nВы интересовались туром «${b.tourRoute}».\n\nХотели предупредить, что в группе осталось всего 4 свободных места. Чтобы места не ушли, мы можем закрепить их за вами на 1–2 дня без оплаты.\n\nУдалось посмотреть программу тура? Подсказать что-то по деталям? 🙌`;
+      }
+      // 3. Note about SALARY / WAITING FOR MONEY
+      else if (note.includes('зарплат') || note.includes('25') || note.includes('аванс') || note.includes('деньг')) {
+        text = `Здравствуйте, ${name}! 👋\n\nВы просили напомнить по туру «${b.tourRoute}» ближе к дате оплаты. Места за вами пока держим! Прислать реквизиты MBank для внесения предоплаты? ✨`;
+      }
+      // 4. Note about DISCOUNT
+      else if (note.includes('скидк') || note.includes('уступ')) {
+        text = `Здравствуйте, ${name}! По согласованию с руководством по туру «${b.tourRoute}»: готовы сделать вам приятный комплимент и скидку при бронировании до конца недели! 🎁 Закрепить за вами места?`;
+      }
+      // 5. Default reminder about payment or tour
+      else if (debt > 0) {
+        text = `Здравствуйте, ${name}! Напоминаем по туру «${b.tourRoute}». Остаток к оплате составляет *${debt.toLocaleString()} сом*. Реквизиты MBank: 0555 123 456 (Asia Expeditions). Ждем чек об оплате! 🙌`;
+      } else {
+        text = `Здравствуйте, ${name}! Ваш тур «${b.tourRoute}» полностью оплачен! ✅ Напоминаем: сбор на стадионе Спартак в 03:30. Не забудьте паспорта! Желаем отличной поездки! ✨`;
+      }
+
+      currentWaTarget = {
+        name: b.clientName,
+        phone: cleanPhone,
+        text: text
+      };
+
+      // 1. Auto-copy text into clipboard immediately
+      navigator.clipboard.writeText(text).catch(() => {});
+
+      // 2. Populate and show modal
+      document.getElementById('waModalClientInfo').innerText = `${b.clientName} • +${cleanPhone}`;
+      document.getElementById('waModalText').value = text;
+      document.getElementById('waSendModal').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeWaSendModal() {
+      document.getElementById('waSendModal').classList.add('hidden');
+    }
+
+    function copyWaModalText() {
+      const text = document.getElementById('waModalText').value;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Текст скопирован в буфер обмена!');
+      });
+    }
+
+    function launchWhatsApp(mode) {
+      if (!currentWaTarget) return;
+      const text = document.getElementById('waModalText').value;
+      const phone = currentWaTarget.phone;
+      const encoded = encodeURIComponent(text);
+
+      // Re-copy to clipboard so Ctrl+V is guaranteed ready
+      navigator.clipboard.writeText(text).catch(() => {});
+
+      if (mode === 'app') {
+        // Direct desktop protocol for WhatsApp Desktop app on Windows
+        window.location.href = `whatsapp://send?phone=${phone}&text=${encoded}`;
+        // Fallback tab after 500ms
+        setTimeout(() => {
+          window.open(`https://api.whatsapp.com/send/?phone=${phone}&text=${encoded}`, '_blank');
+        }, 500);
+      } else {
+        // WhatsApp Web in browser
+        window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encoded}`, '_blank');
+      }
+    }
+
+    // ----------------------------------------------------
+    // QUICK ENTRY MODAL
+    // ----------------------------------------------------
+    function openQuickManualModal() {
+      document.getElementById('quickForm').reset();
+      const select = document.getElementById('qTourSelect');
+      select.innerHTML = '';
+      catalog.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.title;
+        opt.innerText = `${t.title} (${t.price.toLocaleString()} сом)`;
+        select.appendChild(opt);
+      });
+      onQuickTourChange();
+      document.getElementById('quickModal').classList.remove('hidden');
+    }
+
+    function closeQuickModal() { document.getElementById('quickModal').classList.add('hidden'); }
+
+    function onQuickTourChange() {
+      const tourTitle = document.getElementById('qTourSelect').value;
+      const t = catalog.find(x => x.title === tourTitle) || catalog[0];
+      document.getElementById('qTotalPrice').value = t.price;
+      document.getElementById('qPaidAmount').value = t.price >= 10000 ? 5000 : Math.round(t.price / 2);
+      calcQuickDebt();
+    }
+
+    function calcQuickDebt() {
+      const total = parseFloat(document.getElementById('qTotalPrice').value) || 0;
+      const paid = parseFloat(document.getElementById('qPaidAmount').value) || 0;
+      document.getElementById('qDebtDisplay').innerText = Math.max(0, total - paid).toLocaleString() + ' сом';
+    }
+
+    function saveQuickBooking(e) {
+      e.preventDefault();
+      const total = parseFloat(document.getElementById('qTotalPrice').value) || 8000;
+      const paid = parseFloat(document.getElementById('qPaidAmount').value) || 0;
+      let st = 'booked';
+      if (paid >= total) st = 'paid'; else if (paid > 0) st = 'prepaid';
+
+      const newB = {
+        id: "tourist_" + Date.now(),
+        clientName: document.getElementById('qName').value.trim(),
+        clientPhone: document.getElementById('qPhone').value.trim(),
+        tourRoute: document.getElementById('qTourSelect').value,
+        currency: "KGS",
+        priceClient: total,
+        paidAmount: paid,
+        priceCost: Math.round(total * 0.75),
+        status: st,
+        notes: document.getElementById('qNotes').value.trim(),
+        manager: "Тынчтык",
+        updatedAt: Date.now()
+      };
+
+      bookings.unshift(newB);
+      saveToStorage();
+      if (typeof cloudSaveBooking === 'function') cloudSaveBooking(newB);
+      closeQuickModal();
+    }
+
+    // Modal Pay Add
+    let targetBooking = null;
+    function openPayModal(id) {
+      targetBooking = bookings.find(x => x.id === id);
+      if (!targetBooking) return;
+      const debt = Math.max(0, targetBooking.priceClient - targetBooking.paidAmount);
+      document.getElementById('existPayId').value = id;
+      document.getElementById('existPayClientName').innerText = `${targetBooking.clientName} • ${targetBooking.tourRoute}`;
+      document.getElementById('existPaySum').value = debt > 0 ? debt : '';
+      document.getElementById('payModal').classList.remove('hidden');
+    }
+    function closePayModal() { document.getElementById('payModal').classList.add('hidden'); }
+    function saveExistingPayment(e) {
+      e.preventDefault();
+      if (!targetBooking) return;
+      const addSum = parseFloat(document.getElementById('existPaySum').value) || 0;
+      targetBooking.paidAmount += addSum;
+      if (targetBooking.paidAmount >= targetBooking.priceClient) targetBooking.status = 'paid';
+      else targetBooking.status = 'prepaid';
+      targetBooking.updatedAt = Date.now();
+      saveToStorage();
+      if (typeof cloudSaveBooking === 'function') cloudSaveBooking(targetBooking);
+      closePayModal();
+    }
+
+    function deleteBooking(id) {
+      if (confirm('Удалить эту запись?')) {
+        bookings = bookings.filter(b => b.id !== id);
+        saveToStorage();
+        if (typeof cloudDeleteBooking === 'function') cloudDeleteBooking(id);
+      }
+    }
+
+    // ----------------------------------------------------
+    // CATALOG FUNCTIONS & COPY
+    // ----------------------------------------------------
+    function renderCatalog() {
+      const grid = document.getElementById('catalogGrid');
+      grid.innerHTML = '';
+      catalog.forEach(tour => {
+        const theme = getTourTheme(tour.title);
+        const card = document.createElement('div');
+        card.className = `bg-white rounded-3xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between ${theme.cardBorder}`;
+        card.innerHTML = `
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <span class="px-2.5 py-1 rounded-lg text-xs font-bold ${theme.badgeClass}">${theme.tag}</span>
+              <span class="text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">${tour.price.toLocaleString()} сом</span>
+            </div>
+            <h3 class="font-extrabold text-slate-900 text-base mt-2">${tour.title}</h3>
+            <p class="text-xs font-bold text-sky-700 mt-0.5">${tour.dates}</p>
+            <p class="text-xs text-slate-500 mt-1 flex items-center gap-1"><i data-lucide="hotel" class="w-3.5 h-3.5 text-slate-400"></i> ${tour.hotel}</p>
+            <p class="text-xs text-slate-600 mt-3 line-clamp-4 leading-relaxed">${tour.program}</p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+            <button onclick="copyTourToWa('${tour.id}')" class="flex-1 py-2 text-xs font-bold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition flex items-center justify-center gap-1.5">
+              <i data-lucide="copy" class="w-3.5 h-3.5 text-emerald-600"></i> Скопировать программу
+            </button>
+            <button onclick="deleteTour('${tour.id}')" title="Удалить" class="w-8 h-8 rounded-xl bg-slate-50 hover:bg-rose-50 hover:text-rose-600 text-slate-400 flex items-center justify-center transition">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    function copyTourToWa(tourId) {
+      const t = catalog.find(x => x.id === tourId);
+      if (!t) return;
+      const text = `🌟 ${t.title.toUpperCase()}\n📅 Даты: ${t.dates}\n🏨 Отель: ${t.hotel}\n💰 Стоимость: ${t.price.toLocaleString()} сом\n\nПРОГРАММА ТУРА:\n${t.program}\n\nВ СТОИМОСТЬ ВХОДИТ:\n${t.included}\n\nБронируйте заранее! Места ограничены! 🙌✨`;
+      navigator.clipboard.writeText(text).then(() => alert(`Программа тура «${t.title}» скопирована в буфер обмена!`));
+    }
+
+    function deleteTour(tourId) {
+      if (confirm('Удалить этот тур из каталога?')) {
+        catalog = catalog.filter(t => t.id !== tourId);
+        localStorage.setItem('app_tours_catalog', JSON.stringify(catalog));
+        renderCatalog();
+        if (typeof cloudDeleteTour === 'function') cloudDeleteTour(tourId);
+      }
+    }
+
+    function openNewTourModal() { 
+      document.getElementById('tourForm').reset(); 
+      document.getElementById('tourModal').classList.remove('hidden'); 
+    }
+    function closeTourModal() { document.getElementById('tourModal').classList.add('hidden'); }
+
+    function saveTourProduct(e) {
+      e.preventDefault();
+      const newT = {
+        id: "tour_" + Date.now(),
+        country: document.getElementById('tpCountry').value,
+        title: document.getElementById('tpTitle').value.trim(),
+        hotel: document.getElementById('tpHotel').value.trim(),
+        dates: document.getElementById('tpDates').value.trim(),
+        price: parseFloat(document.getElementById('tpPrice').value) || 0,
+        currency: "KGS",
+        program: document.getElementById('tpProgram').value.trim(),
+        included: document.getElementById('tpIncluded').value.trim(),
+        updatedAt: Date.now()
+      };
+      catalog.unshift(newT);
+      localStorage.setItem('app_tours_catalog', JSON.stringify(catalog));
+      closeTourModal();
+      renderCatalog();
+      if (typeof cloudSaveTour === 'function') cloudSaveTour(newT);
+    }
+
+    // ----------------------------------------------------
+    // AI TOUR IMPORT & PARSER (ПОДГОНКА ПОД ФОРМАТ САЙТА)
+    // ----------------------------------------------------
+    let lastParsedTour = null;
+
+    function openAiImportModal() {
+      document.getElementById('aiRawText').value = '';
+      document.getElementById('aiParsedPreview').classList.add('hidden');
+      document.getElementById('aiImportModal').classList.remove('hidden');
+    }
+
+    function closeAiImportModal() {
+      document.getElementById('aiImportModal').classList.add('hidden');
+    }
+
+    function pasteSampleMegaTour() {
+      document.getElementById('aiRawText').value = `Тур «МЕГА АЛМАТЫ» — 2-дневное путешествие выходного дня из Бишкека.
+
+📅 Даты: каждые выходные (пятница, суббота, воскресенье)
+
+📍 Место сбора:
+Парковка стадиона «Спартак»
+(ул. Тоголок Молдо, 17 / Рыскулова)
+
+🕞 Сбор группы: 03:30
+🚌 Выезд: 04:00
+
+Стоимость:
+• Взрослые — 8000 сом
+• Дети 6–12 лет — 7500 сом
+• Дети до 5 лет — бесплатно (без отдельного места)
+
+В стоимость входит:
+• Трансфер Бишкек–Алматы–Бишкек
+• Сопровождение гида
+• Проживание в отеле 4★ (1 ночь)
+• Завтрак (шведский стол)
+• Поездка на метро Алматы
+• Организация тура
+
+Программа тура
+
+1 день:
+• Выезд из Бишкека
+• Завтрак в ресторане казахской кухни «Бауырдак»
+• Поездка на метро
+• Экскурсия по центру Алматы:
+— Парк 28 панфиловцев
+— Вознесенский собор
+— Музей музыкальных инструментов
+• Магазин фабрики «Рахат»
+• Центральный парк (по желанию — зоопарк)
+• Заселение в отель 4★
+• Вечерняя экскурсия на Кок-Тобе
+
+2 день:
+• Завтрак
+• Канатная дорога Медеу–Шымбулак
+• Посещение Арт-музея
+• Обзорная экскурсия по городу
+• ТРЦ MEGA ALMATY
+• Возвращение в Бишкек`;
+    }
+
+    function runAiTourParser() {
+      const raw = document.getElementById('aiRawText').value.trim();
+      if (!raw) {
+        alert('Пожалуйста, вставьте текст тура для анализа.');
+        return;
+      }
+
+      // Smart Parser
+      let title = "Новый тур";
+      const titleMatch = raw.match(/Тур\s+[«"']?([^»"'\n]+)[»"']?/i) || raw.match(/^[^\n]+/);
+      if (titleMatch) {
+        const rawTitle = titleMatch[1] || titleMatch[0];
+        title = `🏔️ Тур «${rawTitle.replace(/^[«"']|[»"']$/g, '').trim()}»`;
+      }
+
+      // Dates & Gathering
+      let dates = "Каждые выходные";
+      const datesMatch = raw.match(/Даты:[ \t]*([^\n]+)/i);
+      if (datesMatch) dates = datesMatch[1].trim();
+
+      const timeMatch = raw.match(/Сбор[^:\n]*:[ \t]*([^\n]+)/i);
+      const departMatch = raw.match(/Выезд[^:\n]*:[ \t]*([^\n]+)/i);
+      if (timeMatch || departMatch) {
+        dates += ` (сбор ${timeMatch ? timeMatch[1].trim() : '03:30'}, выезд ${departMatch ? departMatch[1].trim() : '04:00'})`;
+      }
+
+      // Hotel
+      let hotel = "Отель 4★ (1 ночь)";
+      const hotelMatch = raw.match(/отел[ья][^\n★*]*([0-9]★|[0-9]\*|[^\n,]+)/i);
+      if (hotelMatch) hotel = hotelMatch[0].trim();
+
+      // Price
+      let price = 8000;
+      const adultPriceMatch = raw.match(/Взрослые[^\d]*(\d[\d\s]+)/i) || raw.match(/Стоимость:[^\d]*(\d[\d\s]+)/i) || raw.match(/(\d{4,6})\s*сом/i);
+      if (adultPriceMatch) {
+        price = parseFloat(adultPriceMatch[1].replace(/\s/g, '')) || 8000;
+      }
+
+      // Program
+      let program = "";
+      const progIndex = raw.search(/Программа тура|1 день/i);
+      if (progIndex !== -1) {
+        program = raw.substring(progIndex).trim();
+      } else {
+        program = raw;
+      }
+
+      // What's included
+      let included = "Трансфер туда-обратно, гид, проживание в отеле 4★, завтрак, страховка.";
+      const incIndex = raw.search(/В стоимость входит/i);
+      if (incIndex !== -1) {
+        const endInc = raw.search(/Программа тура/i);
+        if (endInc > incIndex) {
+          included = raw.substring(incIndex, endInc).trim();
+        } else {
+          included = raw.substring(incIndex).split(/\n\s*\n/)[0].trim();
+        }
+      }
+
+      lastParsedTour = {
+        id: "tour_" + Date.now(),
+        country: "kz",
+        title: title,
+        hotel: hotel,
+        dates: dates,
+        price: price,
+        currency: "KGS",
+        program: program,
+        included: included
+      };
+
+      // Fill preview
+      document.getElementById('prevTitle').innerText = lastParsedTour.title;
+      document.getElementById('prevPrice').innerText = lastParsedTour.price.toLocaleString() + ' сом';
+      document.getElementById('prevDates').innerText = lastParsedTour.dates;
+      document.getElementById('prevHotel').innerText = lastParsedTour.hotel;
+      document.getElementById('prevProgram').innerText = lastParsedTour.program;
+      document.getElementById('prevIncluded').innerText = lastParsedTour.included;
+
+      document.getElementById('aiParsedPreview').classList.remove('hidden');
+    }
+
+    function applyParsedToManualForm() {
+      if (!lastParsedTour) return;
+      closeAiImportModal();
+      document.getElementById('tpTitle').value = lastParsedTour.title;
+      document.getElementById('tpDates').value = lastParsedTour.dates;
+      document.getElementById('tpHotel').value = lastParsedTour.hotel;
+      document.getElementById('tpPrice').value = lastParsedTour.price;
+      document.getElementById('tpProgram').value = lastParsedTour.program;
+      document.getElementById('tpIncluded').value = lastParsedTour.included;
+      document.getElementById('tourModal').classList.remove('hidden');
+    }
+
+    function saveParsedTourDirectly() {
+      if (!lastParsedTour) return;
+      lastParsedTour.updatedAt = Date.now();
+      catalog.unshift(lastParsedTour);
+      localStorage.setItem('app_tours_catalog', JSON.stringify(catalog));
+      closeAiImportModal();
+      renderCatalog();
+      if (typeof cloudSaveTour === 'function') cloudSaveTour(lastParsedTour);
+      alert(`Тур «${lastParsedTour.title}» успешно сохранен в Каталог и синхронизирован с облаком!`);
+    }
+
+    // ----------------------------------------------------
+    // WHATSAPP SCRIPTS TEMPLATES
+    // ----------------------------------------------------
+    function setScriptTemplate(type) {
+      const area = document.getElementById('scriptText');
+      if (type === 'mega_almaty') {
+        const mega = catalog.find(t => t.id === 'tour_mega_almaty') || catalog[0];
+        area.value = `🏔️ ТУР «МЕГА АЛМАТЫ» (2 дня / 1 ночь)
+📅 Даты: каждые выходные (пятница, суббота, воскресенье)
+
+📍 Место сбора: Парковка стадиона «Спартак» (ул. Тоголок Молдо, 17 / Рыскулова)
+🕞 Сбор группы: 03:30 | 🚌 Выезд: 04:00
+
+💰 Стоимость:
+• Взрослые — 8 000 сом
+• Дети 6–12 лет — 7 500 сом
+• Дети до 5 лет — бесплатно (без отдельного места)
+
+✅ В стоимость входит:
+• Трансфер Бишкек–Алматы–Бишкек
+• Сопровождение гида
+• Проживание в отеле 4★ (1 ночь)
+• Завтрак (шведский стол)
+• Поездка на метро Алматы
+• Организация тура
+
+📅 ПРОГРАММА ТУРА:
+1 ДЕНЬ:
+• Выезд из Бишкека
+• Завтрак в ресторане казахской кухни «Бауырдак»
+• Поездка на метро
+• Экскурсия по центру Алматы:
+  — Парк 28 панфиловцев
+  — Вознесенский собор
+  — Музей музыкальных инструментов
+• Магазин фабрики «Рахат»
+• Центральный парк (по желанию — зоопарк)
+• Заселение в отель 4★
+• Вечерняя экскурсия на Кок-Тобе
+
+2 ДЕНЬ:
+• Завтрак (шведский стол)
+• Канатная дорога Медеу–Шымбулак
+• Посещение Арт-музея
+• Обзорная экскурсия по городу
+• ТРЦ MEGA ALMATY
+• Возвращение в Бишкек
+
+Бронируйте заранее! Количество мест в микроавтобусе ограничено! 🙌✨
+Менеджер: Тынчтык | Asia Expeditions`;
+      } else if (type === 'ny_almaty') {
+        const ny = catalog.find(t => t.id === 'tour_ny_almaty') || catalog[0];
+        area.value = `🎄 ${ny.title.toUpperCase()}\nДаты: ${ny.dates}\n🏨 Отель: ${ny.hotel}\n\nПРОГРАММА ТУРА:\n${ny.program}\n\n💰 Стоимость тура: ${ny.price.toLocaleString()} сом\n\nВ СТОИМОСТЬ ВХОДИТ:\n${ny.included}\n\nБронируйте заранее! Места ограничены! 🙌✨\nМенеджер: Тынчтык | Asia Expeditions`;
+      } else if (type === 'mbank') {
+        area.value = `Здравствуйте! ✅\n\nЗабронировали за вами места на тур!\n\nРеквизиты для предоплаты:\n📱 MBank: 0555 123 456 (Asia Expeditions)\n📱 О!Деньги: 0700 123 456\n\nПосле перевода отправьте, пожалуйста, чек сюда в чат! 🙌\n\nС уважением, менеджер Тынчтык | Asia Expeditions`;
+      } else if (type === 'border') {
+        area.value = `ВАЖНАЯ ПАМЯТКА ДЛЯ ВЫЕЗДА В КАЗАХСТАН 🇰🇿\n\n1. Взрослым: действующая ID-карта.\n2. Детям до 16 лет: действующий загранпаспорт.\n3. Если ребенок без одного из родителей — доверенность!\n\nДо встречи! Желаем отличной поездки! ✨\nМенеджер: Тынчтык | Asia Expeditions`;
+      }
+    }
+
+    function copyScriptText() {
+      navigator.clipboard.writeText(document.getElementById('scriptText').value).then(() => alert('Скопировано!'));
+    }
+
+    // Init
+    updateStats();
+    renderCatalog();
+    renderBookings();
+    if (typeof initCloudSync === 'function') {
+      initCloudSync();
+    }
+  </script>
+</body>
+</html>
