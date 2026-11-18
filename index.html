@@ -34,6 +34,22 @@
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col overflow-x-hidden">
 
+  <!-- FLOATING APP UPDATE BANNER (ONE-CLICK AUTO-UPDATE) -->
+  <div id="appUpdateBanner" class="fixed top-3 left-1/2 -translate-x-1/2 z-50 max-w-sm w-[92%] bg-slate-900 text-white p-3 rounded-2xl shadow-2xl border border-emerald-500/60 flex items-center justify-between gap-3 transition-all duration-300 transform -translate-y-24 opacity-0 pointer-events-none">
+    <div class="flex items-center gap-2.5 min-w-0">
+      <div class="w-8 h-8 rounded-xl bg-emerald-500 text-slate-950 flex items-center justify-center font-bold shrink-0 text-sm">
+        ⚡
+      </div>
+      <div class="text-xs min-w-0">
+        <p class="font-bold text-white leading-tight">Доступно обновление CRM!</p>
+        <p class="text-[10px] text-slate-400">Нажмите, чтобы загрузить новые функции</p>
+      </div>
+    </div>
+    <button type="button" onclick="applyAppUpdate()" class="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-black text-xs shrink-0 shadow-md transition">
+      Обновить ⚡
+    </button>
+  </div>
+
   <!-- AUTH SCREEN (LOGIN & PERSISTENT SESSION) -->
   <div id="authScreen" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center">
@@ -1024,6 +1040,8 @@
         id: b.id || ('tourist_' + Date.now()),
         clientName: b.clientName || '',
         clientPhone: b.clientPhone || '',
+        peopleCount: Number(b.peopleCount) || 1,
+        familyMembers: b.familyMembers || '',
         tourRoute: b.tourRoute || '',
         currency: b.currency || 'KGS',
         priceClient: Number(b.priceClient) || 0,
@@ -2118,6 +2136,52 @@
     function copyScriptText() {
       navigator.clipboard.writeText(document.getElementById('scriptText').value).then(() => alert('Скопировано!'));
     }
+
+    // ========================================================
+    // AUTO-UPDATE SYSTEM (ONE-CLICK NEW VERSION NOTIFICATION)
+    // ========================================================
+    const APP_BUILD_VERSION = "2026.11.18.1256";
+
+    function checkForAppUpdates() {
+      // Check for updates by fetching current path bypassing cache
+      const checkUrl = window.location.pathname + '?check=' + Date.now();
+      fetch(checkUrl, { cache: 'no-store' })
+        .then(res => {
+          if (!res.ok) return null;
+          return res.text();
+        })
+        .then(html => {
+          if (!html) return;
+          const match = html.match(/APP_BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/);
+          if (match && match[1] && match[1] !== APP_BUILD_VERSION) {
+            showUpdateBanner();
+          }
+        })
+        .catch(() => {});
+    }
+
+    function showUpdateBanner() {
+      const banner = document.getElementById('appUpdateBanner');
+      if (!banner) return;
+      banner.classList.remove('-translate-y-24', 'opacity-0', 'pointer-events-none');
+      banner.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+    }
+
+    function applyAppUpdate() {
+      // Reload page bypassing cache using query parameter
+      const url = new URL(window.location.href);
+      url.searchParams.set('v', Date.now());
+      window.location.href = url.toString();
+    }
+
+    // Check 3 seconds after page loads, and every 60 seconds
+    setTimeout(checkForAppUpdates, 3000);
+    setInterval(checkForAppUpdates, 60000);
+
+    // Also check when tab becomes active / user opens Safari
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) checkForAppUpdates();
+    });
 
     // Init
     initAuth();
