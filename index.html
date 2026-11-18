@@ -34,6 +34,68 @@
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col overflow-x-hidden">
 
+  <!-- AUTH SCREEN (LOGIN & PERSISTENT SESSION) -->
+  <div id="authScreen" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center">
+      <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-md">
+        <i data-lucide="compass" class="w-7 h-7 text-emerald-400"></i>
+      </div>
+      <h2 class="text-xl font-black text-slate-900">Asia Expeditions CRM</h2>
+      <p class="text-xs text-slate-500 mt-1">Выберите свой аккаунт для входа в систему</p>
+
+      <!-- Account cards selection -->
+      <div class="mt-5 space-y-2 text-left">
+        <div onclick="selectAuthUser('tynchtyk')" id="authCard_tynchtyk" class="auth-card p-3 rounded-2xl border-2 border-emerald-500 bg-emerald-50/50 cursor-pointer transition flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-sm">Т</div>
+            <div>
+              <p class="font-bold text-slate-900 text-sm leading-tight">Тынчтык</p>
+              <p class="text-[11px] text-slate-500">Менеджер</p>
+            </div>
+          </div>
+          <span class="text-xs font-bold text-emerald-700">✓ Выбран</span>
+        </div>
+
+        <div onclick="selectAuthUser('sofia')" id="authCard_sofia" class="auth-card p-3 rounded-2xl border-2 border-slate-200 hover:border-slate-300 bg-white cursor-pointer transition flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white font-black flex items-center justify-center text-sm">С</div>
+            <div>
+              <p class="font-bold text-slate-900 text-sm leading-tight">София</p>
+              <p class="text-[11px] text-slate-500">Руководитель</p>
+            </div>
+          </div>
+          <span class="text-xs font-bold text-slate-400"></span>
+        </div>
+
+        <div onclick="selectAuthUser('manager')" id="authCard_manager" class="auth-card p-3 rounded-2xl border-2 border-slate-200 hover:border-slate-300 bg-white cursor-pointer transition flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-slate-700 text-white font-black flex items-center justify-center text-sm">М</div>
+            <div>
+              <p class="font-bold text-slate-900 text-sm leading-tight">Менеджер</p>
+              <p class="text-[11px] text-slate-500">Дежурный менеджер</p>
+            </div>
+          </div>
+          <span class="text-xs font-bold text-slate-400"></span>
+        </div>
+      </div>
+
+      <!-- Password input -->
+      <form onsubmit="handleLoginSubmit(event)" class="mt-4 space-y-3">
+        <input type="hidden" id="authSelectedLogin" value="tynchtyk">
+        <div class="text-left">
+          <label class="block text-[11px] font-bold text-slate-600 mb-1">Пароль (по умолч. 1234):</label>
+          <input type="password" id="authPassword" value="1234" required placeholder="Введите пароль..." 
+                 class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-center tracking-widest focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+        <p id="authErrorMsg" class="text-xs font-bold text-rose-600 hidden">Неверный пароль!</p>
+        <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-md transition">
+          Войти в систему
+        </button>
+        <p class="text-[10px] text-slate-400">Вход сохраняется на этом устройстве навсегда</p>
+      </form>
+    </div>
+  </div>
+
   <!-- Header -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
     <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
@@ -52,7 +114,10 @@
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Облако
                 </span>
               </div>
-              <p class="text-[11px] text-slate-500 mt-0.5">👤 Менеджер: <span class="font-bold text-slate-800">Тынчтык</span> • Аутбаунд</p>
+              <p class="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
+                <span>👤</span> <span id="headerUserLabel" class="font-bold text-slate-800">Тынчтык</span>
+                <button onclick="logoutUser()" class="text-[10px] text-slate-400 hover:text-rose-600 underline" title="Сменить аккаунт">(выйти)</button>
+              </p>
             </div>
           </div>
 
@@ -331,6 +396,16 @@
             <button type="button" onclick="setNoteTag('просит скидку 500 сом на 2 места')" class="px-2 py-1 rounded-lg bg-white border border-amber-300 text-amber-900 text-[10px] font-bold hover:bg-amber-100 transition">
               🏷️ просит скидку
             </button>
+          </div>
+        </div>
+
+        <!-- Change history / Audit log -->
+        <div class="pt-2 border-t border-slate-100">
+          <p class="font-bold text-slate-700 text-[11px] mb-1.5 flex items-center gap-1">
+            <i data-lucide="history" class="w-3.5 h-3.5 text-slate-400"></i> Кто и когда менял (История действий):
+          </p>
+          <div id="ecHistoryList" class="bg-slate-50 rounded-xl p-2.5 max-h-32 overflow-y-auto custom-scrollbar space-y-1.5 text-[11px] text-slate-600 border border-slate-200">
+            <!-- Populated via JS -->
           </div>
         </div>
 
@@ -772,6 +847,86 @@
     let currentTourFilter = 'all';
 
     // ========================================================
+    // USERS & AUTHENTICATION SYSTEM (3 ACCOUNTS + PERSISTENCE)
+    // ========================================================
+    const CRM_USERS = [
+      { login: 'tynchtyk', pass: '1234', name: 'Тынчтык', role: 'Менеджер туров' },
+      { login: 'sofia', pass: '1234', name: 'София', role: 'Руководитель' },
+      { login: 'manager', pass: '1234', name: 'Менеджер', role: 'Дежурный менеджер' }
+    ];
+
+    let currentAuthUser = null;
+
+    function initAuth() {
+      const saved = localStorage.getItem('crm_auth_user');
+      if (saved) {
+        try {
+          currentAuthUser = JSON.parse(saved);
+          applyCurrentUser();
+          const screen = document.getElementById('authScreen');
+          if (screen) screen.classList.add('hidden');
+          return;
+        } catch (e) {
+          localStorage.removeItem('crm_auth_user');
+        }
+      }
+      const screen = document.getElementById('authScreen');
+      if (screen) screen.classList.remove('hidden');
+    }
+
+    function selectAuthUser(login) {
+      document.getElementById('authSelectedLogin').value = login;
+      document.querySelectorAll('.auth-card').forEach(el => {
+        el.className = "auth-card p-3 rounded-2xl border-2 border-slate-200 hover:border-slate-300 bg-white cursor-pointer transition flex items-center justify-between";
+        const tick = el.querySelector('span');
+        if (tick) tick.innerText = '';
+      });
+      const chosen = document.getElementById('authCard_' + login);
+      if (chosen) {
+        chosen.className = "auth-card p-3 rounded-2xl border-2 border-emerald-500 bg-emerald-50/50 cursor-pointer transition flex items-center justify-between";
+        const tick = chosen.querySelector('span');
+        if (tick) tick.innerText = '✓ Выбран';
+      }
+    }
+
+    function handleLoginSubmit(e) {
+      e.preventDefault();
+      const login = document.getElementById('authSelectedLogin').value;
+      const pass = document.getElementById('authPassword').value.trim();
+      const found = CRM_USERS.find(u => u.login === login && u.pass === pass);
+      if (found) {
+        currentAuthUser = found;
+        localStorage.setItem('crm_auth_user', JSON.stringify(found));
+        applyCurrentUser();
+        document.getElementById('authScreen').classList.add('hidden');
+        document.getElementById('authErrorMsg').classList.add('hidden');
+      } else {
+        document.getElementById('authErrorMsg').classList.remove('hidden');
+      }
+    }
+
+    function logoutUser() {
+      if (confirm('Выйти из текущего аккаунта менеджера?')) {
+        localStorage.removeItem('crm_auth_user');
+        currentAuthUser = null;
+        document.getElementById('authScreen').classList.remove('hidden');
+      }
+    }
+
+    function applyCurrentUser() {
+      if (!currentAuthUser) return;
+      const label = document.getElementById('headerUserLabel');
+      if (label) label.innerText = `${currentAuthUser.name} (${currentAuthUser.role})`;
+    }
+
+    function formatHistoryTime(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+    }
+
+    // ========================================================
     // FIREBASE CLOUD REALTIME SYNC (MULTI-MANAGER)
     // ========================================================
     const firebaseConfig = {
@@ -812,6 +967,7 @@
 
     function cloudSaveBooking(b) {
       if (!db) return;
+      const currentUser = currentAuthUser ? currentAuthUser.name : 'Тынчтык';
       const cleanB = {
         id: b.id || ('tourist_' + Date.now()),
         clientName: b.clientName || '',
@@ -823,8 +979,12 @@
         priceCost: Number(b.priceCost) || 0,
         status: b.status || 'booked',
         notes: b.notes || '',
-        manager: b.manager || 'Тынчтык',
-        updatedAt: b.updatedAt || Date.now()
+        manager: b.manager || currentUser,
+        createdBy: b.createdBy || currentUser,
+        createdAt: b.createdAt || Date.now(),
+        updatedBy: b.updatedBy || currentUser,
+        updatedAt: b.updatedAt || Date.now(),
+        history: Array.isArray(b.history) ? b.history : []
       };
       if (b.tourId) cleanB.tourId = b.tourId;
       db.collection('bookings').doc(cleanB.id).set(cleanB, { merge: true })
@@ -1013,8 +1173,12 @@
 
         let matchesTour = true;
         if (currentTourFilter !== 'all') {
-          const theme = getTourTheme(b.tourRoute);
-          matchesTour = (theme.id === currentTourFilter);
+          const t = (b.tourRoute || '').toLowerCase();
+          if (currentTourFilter === 'mega') matchesTour = t.includes('мега') || t.includes('mega');
+          else if (currentTourFilter === 'ny') matchesTour = t.includes('новогод') || t.includes('31 дек');
+          else if (currentTourFilter === 'kolsay') matchesTour = t.includes('кольсай') || t.includes('чарын');
+          else if (currentTourFilter === 'dubai') matchesTour = t.includes('дубай') || t.includes('dubai');
+          else if (currentTourFilter === 'vietnam') matchesTour = t.includes('вьетнам') || t.includes('фукуок');
         }
 
         const matchesSearch = !search || 
@@ -1094,6 +1258,15 @@
                   </span>
                 </div>
               </div>
+
+              <!-- History / Editor info -->
+              <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                <span class="flex items-center gap-1">
+                  <i data-lucide="user" class="w-3 h-3 text-slate-400"></i>
+                  <span>${b.updatedBy ? 'Изменил(а): <strong class="text-slate-600">' + b.updatedBy + '</strong>' : 'Автор: <strong class="text-slate-600">' + (b.createdBy || 'Тынчтык') + '</strong>'}</span>
+                </span>
+                <span>🕒 ${formatHistoryTime(b.updatedAt || b.createdAt)}</span>
+              </div>
             </div>
 
             <!-- Action buttons -->
@@ -1111,14 +1284,10 @@
               </button>
             </div>
           `;
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-              </button>
-            </div>
-          `;
           grid.appendChild(card);
         });
       }
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
     }
 
     // ----------------------------------------------------
@@ -1149,6 +1318,22 @@
         select.appendChild(opt);
       });
 
+      // Populate history list
+      const histList = document.getElementById('ecHistoryList');
+      if (histList) {
+        const hist = Array.isArray(b.history) ? b.history : [];
+        if (hist.length === 0) {
+          histList.innerHTML = `<p class="text-slate-400 italic">История пока пуста. Запись создал(а): ${b.createdBy || 'Тынчтык'}</p>`;
+        } else {
+          histList.innerHTML = hist.map(h => `
+            <div class="flex items-center justify-between py-1 border-b border-slate-200/60 last:border-0">
+              <span><strong class="text-slate-800">${h.who}</strong>: ${h.action}</span>
+              <span class="text-[10px] text-slate-400 font-mono shrink-0 ml-2">${h.time}</span>
+            </div>
+          `).join('');
+        }
+      }
+
       document.getElementById('editClientModal').classList.remove('hidden');
     }
 
@@ -1169,6 +1354,9 @@
       e.preventDefault();
       if (!currentEditBooking) return;
 
+      const user = currentAuthUser ? currentAuthUser.name : 'Менеджер';
+      const timeStr = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+
       currentEditBooking.clientName = document.getElementById('ecName').value.trim();
       currentEditBooking.clientPhone = document.getElementById('ecPhone').value.trim();
       currentEditBooking.tourRoute = document.getElementById('ecTourSelect').value;
@@ -1176,7 +1364,15 @@
       currentEditBooking.paidAmount = parseFloat(document.getElementById('ecPaidAmount').value) || 0;
       currentEditBooking.status = document.getElementById('ecStatus').value;
       currentEditBooking.notes = document.getElementById('ecNotes').value.trim();
+      currentEditBooking.updatedBy = user;
       currentEditBooking.updatedAt = Date.now();
+
+      if (!Array.isArray(currentEditBooking.history)) currentEditBooking.history = [];
+      currentEditBooking.history.unshift({
+        who: user,
+        action: `Изменил(а) данные / заметку`,
+        time: timeStr
+      });
 
       saveToStorage();
       if (typeof cloudSaveBooking === 'function') cloudSaveBooking(currentEditBooking);
@@ -1331,6 +1527,9 @@
       let st = 'booked';
       if (paid >= total) st = 'paid'; else if (paid > 0) st = 'prepaid';
 
+      const user = currentAuthUser ? currentAuthUser.name : 'Тынчтык';
+      const timeStr = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+
       const newB = {
         id: "tourist_" + Date.now(),
         clientName: document.getElementById('qName').value.trim(),
@@ -1342,8 +1541,14 @@
         priceCost: Math.round(total * 0.75),
         status: st,
         notes: document.getElementById('qNotes').value.trim(),
-        manager: "Тынчтык",
-        updatedAt: Date.now()
+        manager: user,
+        createdBy: user,
+        createdAt: Date.now(),
+        updatedBy: user,
+        updatedAt: Date.now(),
+        history: [
+          { who: user, action: `Создал(а) бронь (${st === 'paid' ? 'Оплачено 100%' : st === 'prepaid' ? 'Предоплата ' + paid.toLocaleString() + ' сом' : 'Бронь'})`, time: timeStr }
+        ]
       };
 
       bookings.unshift(newB);
@@ -1371,14 +1576,28 @@
       targetBooking.paidAmount += addSum;
       if (targetBooking.paidAmount >= targetBooking.priceClient) targetBooking.status = 'paid';
       else targetBooking.status = 'prepaid';
+
+      const user = currentAuthUser ? currentAuthUser.name : 'Менеджер';
+      const timeStr = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+
+      targetBooking.updatedBy = user;
       targetBooking.updatedAt = Date.now();
+      if (!Array.isArray(targetBooking.history)) targetBooking.history = [];
+      targetBooking.history.unshift({
+        who: user,
+        action: `Внес(ла) оплату: +${addSum.toLocaleString()} сом (Всего: ${targetBooking.paidAmount.toLocaleString()} сом)`,
+        time: timeStr
+      });
+
       saveToStorage();
       if (typeof cloudSaveBooking === 'function') cloudSaveBooking(targetBooking);
       closePayModal();
     }
 
     function deleteBooking(id) {
-      if (confirm('Удалить эту запись?')) {
+      const b = bookings.find(x => x.id === id);
+      const name = b ? b.clientName : 'этого туриста';
+      if (confirm(`Удалить запись «${name}» из базы?`)) {
         bookings = bookings.filter(b => b.id !== id);
         saveToStorage();
         if (typeof cloudDeleteBooking === 'function') cloudDeleteBooking(id);
@@ -1636,6 +1855,7 @@
     // ----------------------------------------------------
     function setScriptTemplate(type) {
       const area = document.getElementById('scriptText');
+      const mgr = currentAuthUser ? currentAuthUser.name : 'Тынчтык';
       if (type === 'mega_almaty') {
         const mega = catalog.find(t => t.id === 'tour_mega_almaty') || catalog[0];
         area.value = `🏔️ ТУР «МЕГА АЛМАТЫ» (2 дня / 1 ночь)
@@ -1680,14 +1900,14 @@
 • Возвращение в Бишкек
 
 Бронируйте заранее! Количество мест в микроавтобусе ограничено! 🙌✨
-Менеджер: Тынчтык | Asia Expeditions`;
+Менеджер: ${mgr} | Asia Expeditions`;
       } else if (type === 'ny_almaty') {
         const ny = catalog.find(t => t.id === 'tour_ny_almaty') || catalog[0];
-        area.value = `🎄 ${ny.title.toUpperCase()}\nДаты: ${ny.dates}\n🏨 Отель: ${ny.hotel}\n\nПРОГРАММА ТУРА:\n${ny.program}\n\n💰 Стоимость тура: ${ny.price.toLocaleString()} сом\n\nВ СТОИМОСТЬ ВХОДИТ:\n${ny.included}\n\nБронируйте заранее! Места ограничены! 🙌✨\nМенеджер: Тынчтык | Asia Expeditions`;
+        area.value = `🎄 ${ny.title.toUpperCase()}\nДаты: ${ny.dates}\n🏨 Отель: ${ny.hotel}\n\nПРОГРАММА ТУРА:\n${ny.program}\n\n💰 Стоимость тура: ${ny.price.toLocaleString()} сом\n\nВ СТОИМОСТЬ ВХОДИТ:\n${ny.included}\n\nБронируйте заранее! Места ограничены! 🙌✨\nМенеджер: ${mgr} | Asia Expeditions`;
       } else if (type === 'mbank') {
-        area.value = `Здравствуйте! ✅\n\nЗабронировали за вами места на тур!\n\nРеквизиты для предоплаты:\n📱 MBank: 0555 123 456 (Asia Expeditions)\n📱 О!Деньги: 0700 123 456\n\nПосле перевода отправьте, пожалуйста, чек сюда в чат! 🙌\n\nС уважением, менеджер Тынчтык | Asia Expeditions`;
+        area.value = `Здравствуйте! ✅\n\nЗабронировали за вами места на тур!\n\nРеквизиты для предоплаты:\n📱 MBank: 0555 123 456 (Asia Expeditions)\n📱 О!Деньги: 0700 123 456\n\nПосле перевода отправьте, пожалуйста, чек сюда в чат! 🙌\n\nС уважением, менеджер ${mgr} | Asia Expeditions`;
       } else if (type === 'border') {
-        area.value = `ВАЖНАЯ ПАМЯТКА ДЛЯ ВЫЕЗДА В КАЗАХСТАН 🇰🇿\n\n1. Взрослым: действующая ID-карта.\n2. Детям до 16 лет: действующий загранпаспорт.\n3. Если ребенок без одного из родителей — доверенность!\n\nДо встречи! Желаем отличной поездки! ✨\nМенеджер: Тынчтык | Asia Expeditions`;
+        area.value = `ВАЖНАЯ ПАМЯТКА ДЛЯ ВЫЕЗДА В КАЗАХСТАН 🇰🇿\n\n1. Взрослым: действующая ID-карта.\n2. Детям до 16 лет: действующий загранпаспорт.\n3. Если ребенок без одного из родителей — доверенность!\n\nДо встречи! Желаем отличной поездки! ✨\nМенеджер: ${mgr} | Asia Expeditions`;
       }
     }
 
@@ -1696,6 +1916,7 @@
     }
 
     // Init
+    initAuth();
     updateStats();
     renderCatalog();
     renderBookings();
