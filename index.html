@@ -103,8 +103,8 @@
       <form onsubmit="handleLoginSubmit(event)" class="mt-4 space-y-3">
         <input type="hidden" id="authSelectedLogin" value="tynchtyk">
         <div class="text-left">
-          <label class="block text-[11px] font-bold text-slate-600 mb-1">Пароль (по умолч. 1234):</label>
-          <input type="password" id="authPassword" value="1234" required placeholder="Введите пароль..." 
+          <label class="block text-[11px] font-bold text-slate-600 mb-1">Персональный пароль менеджера:</label>
+          <input type="password" id="authPassword" value="" required placeholder="Введите ваш пароль..." 
                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-center tracking-widest focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
         </div>
         <p id="authErrorMsg" class="text-xs font-bold text-rose-600 hidden">Неверный пароль!</p>
@@ -861,74 +861,25 @@
       localStorage.setItem('app_tours_catalog', JSON.stringify(catalog));
     }
 
-    // 2. BOOKINGS DATA WITH SMART NOTES & COLOR THEMES
-    const defaultBookings = [
-      {
-        id: "tourist_mega_1",
-        clientName: "Нурбек Токтосунов (2 чел)",
-        clientPhone: "0702 44 55 66",
-        tourId: "tour_mega_almaty",
-        tourRoute: "🏔️ Тур «МЕГА АЛМАТЫ» (2 дня / 1 ночь)",
-        currency: "KGS",
-        priceClient: 15500, // 1 взрослый (8000) + 1 ребенок 8 лет (7500)
-        paidAmount: 5000,
-        priceCost: 11000,
-        status: "prepaid",
-        notes: "1 взрослый + ребенок 8 лет (7500 сом). Посадка на стадионе Спартак в 03:30"
-      },
-      {
-        id: "tourist_1",
-        clientName: "Азамат Ибраимов",
-        clientPhone: "0555 77 88 99",
-        tourId: "tour_ny_almaty",
-        tourRoute: "🎄 Новогодний тур в Алматы (31 дек - 2 янв)",
-        currency: "KGS",
-        priceClient: 16900,
-        paidAmount: 5000,
-        priceCost: 12500,
-        status: "prepaid",
-        notes: "с двумя детьми (7 и 10 лет) уточнить стоимость доп. мест в Grand Milldam"
-      },
-      {
-        id: "tourist_2",
-        clientName: "Алина Касымова",
-        clientPhone: "0700 12 34 56",
-        tourId: "tour_ny_almaty",
-        tourRoute: "🎄 Новогодний тур в Алматы (31 дек - 2 янв)",
-        currency: "KGS",
-        priceClient: 16900,
-        paidAmount: 0,
-        priceCost: 12500,
-        status: "booked",
-        notes: "клиент обдумывает, напомнить через 2 дня (советуется с подругой)"
-      },
-      {
-        id: "tourist_3",
-        clientName: "Бакыт Асанов (2 места)",
-        clientPhone: "0770 99 88 77",
-        tourId: "tour_ny_almaty",
-        currency: "KGS",
-        priceClient: 33800,
-        paidAmount: 33800,
-        priceCost: 25000,
-        status: "paid",
-        notes: "оплачено 100%, места в начале автобуса"
-      }
-    ];
-
     let bookings = JSON.parse(localStorage.getItem('almaty_ny_bookings')) || [];
 
     let currentStatusFilter = 'all';
     let currentTourFilter = 'all';
 
     // ========================================================
-    // USERS & AUTHENTICATION SYSTEM (3 ACCOUNTS + PERSISTENCE)
+    // USERS & SECURE AUTHENTICATION SYSTEM (CRYPTO SHA-256 HASH)
     // ========================================================
     const CRM_USERS = [
-      { login: 'tynchtyk', pass: '1234', name: 'Тынчтык', role: 'Менеджер туров' },
-      { login: 'sofia', pass: '1234', name: 'София', role: 'Руководитель' },
-      { login: 'manager', pass: '1234', name: 'Менеджер', role: 'Дежурный менеджер' }
+      { login: 'tynchtyk', passHash: '37faea0e4f2f5aae616fe32a66c8de9fc8167747863358316fe970e792c0c7ac', name: 'Тынчтык', role: 'Менеджер туров' },
+      { login: 'sofia', passHash: '2271fbdd8bdb905e534247835c8bb8360f0b8876f2baf9b685cdf64603af04f5', name: 'София', role: 'Руководитель' },
+      { login: 'manager', passHash: '75a2cd9170c8c13320cd859caf0c0b9708df7b5b2e4654461736e2e8c8075112', name: 'Менеджер', role: 'Дежурный менеджер' }
     ];
+
+    async function hashPassword(str) {
+      const buffer = new TextEncoder().encode(str);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
 
     let currentAuthUser = null;
 
@@ -964,17 +915,19 @@
       }
     }
 
-    function handleLoginSubmit(e) {
+    async function handleLoginSubmit(e) {
       e.preventDefault();
       const login = document.getElementById('authSelectedLogin').value;
       const pass = document.getElementById('authPassword').value.trim();
-      const found = CRM_USERS.find(u => u.login === login && u.pass === pass);
+      const inputHash = await hashPassword(pass);
+      const found = CRM_USERS.find(u => u.login === login && (u.passHash === inputHash || u.pass === pass));
       if (found) {
         currentAuthUser = found;
         localStorage.setItem('crm_auth_user', JSON.stringify(found));
         applyCurrentUser();
         document.getElementById('authScreen').classList.add('hidden');
         document.getElementById('authErrorMsg').classList.add('hidden');
+        document.getElementById('authPassword').value = '';
       } else {
         document.getElementById('authErrorMsg').classList.remove('hidden');
       }
@@ -2147,7 +2100,7 @@
     // ========================================================
     // AUTO-UPDATE SYSTEM (ONE-CLICK NEW VERSION NOTIFICATION)
     // ========================================================
-    const APP_BUILD_VERSION = "2026.11.18.1320";
+    const APP_BUILD_VERSION = "2026.11.18.1325";
 
     function initTabFavicon() {
       try {
@@ -2210,6 +2163,42 @@
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) checkForAppUpdates();
     });
+
+    // ========================================================
+    // SECURITY & ANTI-TAMPER SHIELD (PROTECTION AGAINST THEFT)
+    // ========================================================
+    (function activateSecurityShield() {
+      // 1. Block right-click context menu (so nobody can click "Inspect" or "View Source")
+      document.addEventListener('contextmenu', e => e.preventDefault());
+
+      // 2. Block keyboard inspector shortcuts (F12, Ctrl+U, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C)
+      document.addEventListener('keydown', e => {
+        if (
+          e.key === 'F12' || 
+          (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].includes(e.key)) ||
+          (e.ctrlKey && ['U', 'u', 'S', 's'].includes(e.key))
+        ) {
+          e.preventDefault();
+          return false;
+        }
+      });
+
+      // 3. Domain Lock Protection
+      // If someone steals this file and uploads it to their own domain, lock it down!
+      const host = window.location.hostname;
+      const isAllowed = host === 'chexwan.github.io' || host === 'localhost' || host === '127.0.0.1' || host === '' || host.endsWith('github.io');
+      if (!isAllowed) {
+        document.body.innerHTML = `
+          <div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;color:#f87171;font-family:sans-serif;text-align:center;padding:20px;">
+            <div>
+              <h2 style="font-size:24px;font-weight:900;margin-bottom:10px;">⛔ ДОСТУП ЗАБЛОКИРОВАН</h2>
+              <p style="color:#94a3b8;font-size:14px;">Несанкционированное использование кода системы Asia Expeditions CRM.<br>Копирование и распространение запрещено правообладателем.</p>
+            </div>
+          </div>
+        `;
+        throw new Error("Unauthorized domain clone");
+      }
+    })();
 
     // Init
     initTabFavicon();
