@@ -57,8 +57,8 @@
   <!-- AUTH SCREEN (LOGIN & PERSISTENT SESSION) -->
   <div id="authScreen" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center">
-      <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-md">
-        <i data-lucide="compass" class="w-7 h-7 text-emerald-400"></i>
+      <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-3xl shadow-sm">
+        🧳
       </div>
       <h2 class="text-xl font-black text-slate-900">Asia Expeditions CRM</h2>
       <p class="text-xs text-slate-500 mt-1">Выберите свой аккаунт для входа в систему</p>
@@ -124,8 +124,8 @@
         <!-- Logo & Title -->
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2.5 min-w-0">
-            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shrink-0 shadow-sm">
-              <i data-lucide="compass" class="w-5 h-5 text-emerald-400"></i>
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0 shadow-sm text-lg sm:text-xl">
+              🧳
             </div>
             <div class="min-w-0">
               <div class="flex items-center gap-1.5 flex-wrap">
@@ -134,9 +134,12 @@
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Облако
                 </span>
               </div>
-              <p class="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
+              <p class="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1 flex-wrap">
                 <span>👤</span> <span id="headerUserLabel" class="font-bold text-slate-800">Тынчтык</span>
                 <button onclick="logoutUser()" class="text-[10px] text-slate-400 hover:text-rose-600 underline" title="Сменить аккаунт">(выйти)</button>
+                <button type="button" onclick="applyAppUpdate()" class="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 hover:text-emerald-700 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded-md transition shadow-2xs" title="Обновить сайт до самой свежей версии">
+                  <span>⚡ Обновить</span>
+                </button>
               </p>
             </div>
           </div>
@@ -2144,7 +2147,28 @@
     // ========================================================
     // AUTO-UPDATE SYSTEM (ONE-CLICK NEW VERSION NOTIFICATION)
     // ========================================================
-    const APP_BUILD_VERSION = "2026.11.18.1308";
+    const APP_BUILD_VERSION = "2026.11.18.1315";
+
+    function initTabFavicon() {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        ctx.font = '48px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🧳', 32, 36);
+        let link = document.querySelector("link[rel*='icon']");
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'shortcut icon';
+          document.head.appendChild(link);
+        }
+        link.type = 'image/png';
+        link.href = canvas.toDataURL('image/png');
+      } catch (e) {}
+    }
 
     function checkForAppUpdates() {
       // Check for updates by fetching current path bypassing cache
@@ -2188,6 +2212,7 @@
     });
 
     // Init
+    initTabFavicon();
     initAuth();
     updateStats();
     renderCatalog();
