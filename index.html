@@ -362,7 +362,7 @@
           </div>
           <div>
             <label class="block font-bold text-slate-700 mb-1">Оплачено клиентом</label>
-            <input type="number" id="ecPaidAmount" required class="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl text-xs font-bold text-emerald-700">
+            <input type="number" id="ecPaidAmount" required min="0" oninput="onEcPaidChange()" class="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl text-xs font-bold text-emerald-700">
           </div>
           <div>
             <label class="block font-bold text-slate-700 mb-1">Текущий статус</label>
@@ -444,8 +444,8 @@
       <div id="waAutoCopyAlert" class="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-2.5 text-emerald-950">
         <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5"></i>
         <div class="text-[11px] leading-snug">
-          <span class="font-black text-emerald-900 block mb-0.5">Текст сообщения уже скопирован в буфер обмена!</span>
-          Номер отформатирован в международный стандарт <strong>+996...</strong>. Если в WhatsApp поле ввода сообщения окажется пустым — просто нажмите <kbd class="px-1.5 py-0.5 bg-white border border-emerald-300 rounded font-mono font-bold text-slate-800 shadow-xs">Ctrl + V</kbd>.
+          <span class="font-black text-emerald-900 block mb-0.5">Текст сообщения скопирован в буфер!</span>
+          <span id="waPasteHint">Номер +996... Если в WhatsApp поле окажется пустым — зажмите пальцем и нажмите «Вставить».</span>
         </div>
       </div>
 
@@ -460,10 +460,10 @@
       </div>
 
       <div class="space-y-2 pt-2 border-t border-slate-100">
-        <button type="button" onclick="launchWhatsApp('app')" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2">
-          <i data-lucide="external-link" class="w-4 h-4"></i> 💻 Открыть приложение WhatsApp на ПК
+        <button id="waBtnPrimary" type="button" onclick="launchWhatsApp('app')" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+          <i data-lucide="send" class="w-4 h-4"></i> <span id="waBtnPrimaryText">📱 Открыть WhatsApp на телефоне</span>
         </button>
-        <button type="button" onclick="launchWhatsApp('web')" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-2xl transition flex items-center justify-center gap-2">
+        <button id="waBtnSecondary" type="button" onclick="launchWhatsApp('web')" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-2xl transition flex items-center justify-center gap-2">
           <i data-lucide="globe" class="w-4 h-4 text-slate-500"></i> 🌐 Открыть в браузере (WhatsApp Web)
         </button>
       </div>
@@ -506,8 +506,8 @@
             <input type="number" id="qTotalPrice" oninput="calcQuickDebt()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold">
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Предоплата</label>
-            <input type="number" id="qPaidAmount" value="5000" oninput="calcQuickDebt()" class="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl text-xs font-bold text-emerald-700">
+            <label class="block font-bold text-slate-700 mb-1">Предоплата (сом)</label>
+            <input type="number" id="qPaidAmount" value="0" min="0" oninput="calcQuickDebt()" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-emerald-700">
           </div>
           <div>
             <label class="block font-bold text-slate-700 mb-1">Долг:</label>
@@ -1168,7 +1168,10 @@
         if (currentStatusFilter === 'with_notes') {
           matchesStatus = b.notes && b.notes.trim() !== '';
         } else if (currentStatusFilter !== 'all') {
-          matchesStatus = (b.status === currentStatusFilter);
+          const p = parseFloat(b.paidAmount) || 0;
+          const tot = parseFloat(b.priceClient) || 0;
+          const actualSt = (p === 0) ? 'booked' : (p >= tot && tot > 0) ? 'paid' : 'prepaid';
+          matchesStatus = (actualSt === currentStatusFilter);
         }
 
         let matchesTour = true;
@@ -1200,10 +1203,20 @@
           const paid = parseFloat(b.paidAmount) || 0;
           const debt = Math.max(0, clientPrice - paid);
 
-          let statusBadge = `<span class="px-2 py-0.5 rounded-lg font-bold text-[10px] bg-sky-100 text-sky-800">🔵 Только бронь</span>`;
-          if (b.status === 'prepaid') {
-            statusBadge = `<span class="px-2 py-0.5 rounded-lg font-bold text-[10px] bg-amber-100 text-amber-900 border border-amber-200">🟠 Предоплата</span>`;
-          } else if (b.status === 'paid') {
+          // Calculate real status strictly from actual paidAmount
+          let actualStatus = b.status;
+          if (paid === 0) {
+            actualStatus = 'booked';
+          } else if (paid >= clientPrice && clientPrice > 0) {
+            actualStatus = 'paid';
+          } else if (paid > 0) {
+            actualStatus = 'prepaid';
+          }
+
+          let statusBadge = `<span class="px-2 py-0.5 rounded-lg font-bold text-[10px] bg-sky-100 text-sky-800 border border-sky-200">🔵 Только бронь</span>`;
+          if (actualStatus === 'prepaid') {
+            statusBadge = `<span class="px-2 py-0.5 rounded-lg font-bold text-[10px] bg-amber-100 text-amber-900 border border-amber-200">🟠 Предоплата (${paid.toLocaleString()} сом)</span>`;
+          } else if (actualStatus === 'paid') {
             statusBadge = `<span class="px-2 py-0.5 rounded-lg font-bold text-[10px] bg-emerald-100 text-emerald-900 border border-emerald-200">🟢 Оплачено 100%</span>`;
           }
 
@@ -1350,6 +1363,15 @@
       }
     }
 
+    function onEcPaidChange() {
+      const total = parseFloat(document.getElementById('ecPriceClient').value) || 0;
+      const paid = parseFloat(document.getElementById('ecPaidAmount').value) || 0;
+      const select = document.getElementById('ecStatus');
+      if (paid === 0) select.value = 'booked';
+      else if (paid >= total && total > 0) select.value = 'paid';
+      else if (paid > 0) select.value = 'prepaid';
+    }
+
     function saveClientCard(e) {
       e.preventDefault();
       if (!currentEditBooking) return;
@@ -1357,12 +1379,19 @@
       const user = currentAuthUser ? currentAuthUser.name : 'Менеджер';
       const timeStr = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
 
+      const totalPr = parseFloat(document.getElementById('ecPriceClient').value) || 0;
+      const paidAm = parseFloat(document.getElementById('ecPaidAmount').value) || 0;
+      let st = document.getElementById('ecStatus').value;
+      if (paidAm === 0) st = 'booked';
+      else if (paidAm >= totalPr && totalPr > 0) st = 'paid';
+      else if (paidAm > 0) st = 'prepaid';
+
       currentEditBooking.clientName = document.getElementById('ecName').value.trim();
       currentEditBooking.clientPhone = document.getElementById('ecPhone').value.trim();
       currentEditBooking.tourRoute = document.getElementById('ecTourSelect').value;
-      currentEditBooking.priceClient = parseFloat(document.getElementById('ecPriceClient').value) || 0;
-      currentEditBooking.paidAmount = parseFloat(document.getElementById('ecPaidAmount').value) || 0;
-      currentEditBooking.status = document.getElementById('ecStatus').value;
+      currentEditBooking.priceClient = totalPr;
+      currentEditBooking.paidAmount = paidAm;
+      currentEditBooking.status = st;
       currentEditBooking.notes = document.getElementById('ecNotes').value.trim();
       currentEditBooking.updatedBy = user;
       currentEditBooking.updatedAt = Date.now();
@@ -1370,7 +1399,7 @@
       if (!Array.isArray(currentEditBooking.history)) currentEditBooking.history = [];
       currentEditBooking.history.unshift({
         who: user,
-        action: `Изменил(а) данные / заметку`,
+        action: `Изменил(а) данные / заметку (${st === 'paid' ? 'Оплачено 100%' : st === 'prepaid' ? 'Предоплата ' + paidAm.toLocaleString() + ' сом' : 'Бронь'})`,
         time: timeStr
       });
 
@@ -1450,6 +1479,23 @@
       // 2. Populate and show modal
       document.getElementById('waModalClientInfo').innerText = `${b.clientName} • +${cleanPhone}`;
       document.getElementById('waModalText').value = text;
+
+      // Adaptive Mobile vs PC UI
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const hint = document.getElementById('waPasteHint');
+      const btnPrimaryText = document.getElementById('waBtnPrimaryText');
+      const btnSecondary = document.getElementById('waBtnSecondary');
+
+      if (isMobile) {
+        if (hint) hint.innerHTML = `Номер: <strong>+${cleanPhone}</strong>. Если текст не вставился — зажмите пальцем поле ввода и нажмите <strong>«Вставить»</strong>.`;
+        if (btnPrimaryText) btnPrimaryText.innerText = '📱 Открыть WhatsApp на телефоне';
+        if (btnSecondary) btnSecondary.classList.add('hidden');
+      } else {
+        if (hint) hint.innerHTML = `Номер: <strong>+${cleanPhone}</strong>. Если поле ввода пустое — нажмите <kbd class="px-1.5 py-0.5 bg-white border border-emerald-300 rounded font-mono font-bold text-slate-800 shadow-xs">Ctrl + V</kbd>.`;
+        if (btnPrimaryText) btnPrimaryText.innerText = '💻 Открыть WhatsApp на ПК';
+        if (btnSecondary) btnSecondary.classList.remove('hidden');
+      }
+
       document.getElementById('waSendModal').classList.remove('hidden');
       if (window.lucide) lucide.createIcons();
     }
@@ -1471,18 +1517,21 @@
       const phone = currentWaTarget.phone;
       const encoded = encodeURIComponent(text);
 
-      // Re-copy to clipboard so Ctrl+V is guaranteed ready
       navigator.clipboard.writeText(text).catch(() => {});
 
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        // Universal WhatsApp API link: iOS Safari & Android will open native WhatsApp app directly!
+        window.location.href = `https://api.whatsapp.com/send?phone=${phone}&text=${encoded}`;
+        return;
+      }
+
       if (mode === 'app') {
-        // Direct desktop protocol for WhatsApp Desktop app on Windows
         window.location.href = `whatsapp://send?phone=${phone}&text=${encoded}`;
-        // Fallback tab after 500ms
         setTimeout(() => {
           window.open(`https://api.whatsapp.com/send/?phone=${phone}&text=${encoded}`, '_blank');
-        }, 500);
+        }, 600);
       } else {
-        // WhatsApp Web in browser
         window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encoded}`, '_blank');
       }
     }
@@ -1510,7 +1559,7 @@
       const tourTitle = document.getElementById('qTourSelect').value;
       const t = catalog.find(x => x.title === tourTitle) || catalog[0];
       document.getElementById('qTotalPrice').value = t.price;
-      document.getElementById('qPaidAmount').value = t.price >= 10000 ? 5000 : Math.round(t.price / 2);
+      document.getElementById('qPaidAmount').value = 0;
       calcQuickDebt();
     }
 
@@ -1522,10 +1571,11 @@
 
     function saveQuickBooking(e) {
       e.preventDefault();
-      const total = parseFloat(document.getElementById('qTotalPrice').value) || 8000;
+      const total = parseFloat(document.getElementById('qTotalPrice').value) || 0;
       const paid = parseFloat(document.getElementById('qPaidAmount').value) || 0;
       let st = 'booked';
-      if (paid >= total) st = 'paid'; else if (paid > 0) st = 'prepaid';
+      if (paid >= total && total > 0) st = 'paid';
+      else if (paid > 0) st = 'prepaid';
 
       const user = currentAuthUser ? currentAuthUser.name : 'Тынчтык';
       const timeStr = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
@@ -1574,7 +1624,8 @@
       if (!targetBooking) return;
       const addSum = parseFloat(document.getElementById('existPaySum').value) || 0;
       targetBooking.paidAmount += addSum;
-      if (targetBooking.paidAmount >= targetBooking.priceClient) targetBooking.status = 'paid';
+      if (targetBooking.paidAmount === 0) targetBooking.status = 'booked';
+      else if (targetBooking.paidAmount >= targetBooking.priceClient) targetBooking.status = 'paid';
       else targetBooking.status = 'prepaid';
 
       const user = currentAuthUser ? currentAuthUser.name : 'Менеджер';
