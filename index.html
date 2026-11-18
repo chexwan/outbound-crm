@@ -350,27 +350,53 @@
 
         <div>
           <label class="block font-bold text-slate-700 mb-1">Тур / Направление *</label>
-          <select id="ecTourSelect" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <select id="ecTourSelect" onchange="onEditTourChange()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <!-- Populated via JS -->
           </select>
         </div>
 
-        <div class="grid grid-cols-3 gap-3">
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Полная стоимость</label>
-            <input type="number" id="ecPriceClient" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold">
+        <!-- FAMILY MEMBERS / COMPANIONS IN EDIT MODAL -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-bold text-slate-700 flex items-center gap-1.5">
+              <span>👨‍👩‍👧‍👦 Члены семьи / попутчики</span>
+            </label>
+            <span class="text-[10px] text-slate-400">ФИО, возраст или родство</span>
           </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Оплачено клиентом</label>
-            <input type="number" id="ecPaidAmount" required min="0" oninput="onEcPaidChange()" class="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl text-xs font-bold text-emerald-700">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Текущий статус</label>
-            <select id="ecStatus" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold">
-              <option value="booked">🔵 Только бронь</option>
-              <option value="prepaid">🟠 Предоплата</option>
-              <option value="paid">🟢 Оплачено 100%</option>
-            </select>
+          <input type="text" id="ecFamilyMembers" placeholder="Напр. Супруга Айгуль, сын Тимур (8 лет)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <!-- PRICING & PEOPLE COUNT IN EDIT MODAL -->
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 items-end">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Туристов (чел)</label>
+              <div class="flex items-center">
+                <button type="button" onclick="changePeopleCount('edit', -1)" class="w-8 h-8 rounded-l-xl bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 font-black text-base flex items-center justify-center border border-r-0 border-slate-300 transition">−</button>
+                <input type="number" id="ecPeopleCount" value="1" min="1" max="50" oninput="onEditPeopleChange()" class="w-10 h-8 text-center bg-white border border-slate-300 text-xs font-black text-slate-900 focus:outline-none">
+                <button type="button" onclick="changePeopleCount('edit', 1)" class="w-8 h-8 rounded-r-xl bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 font-black text-base flex items-center justify-center border border-l-0 border-slate-300 transition">+</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Полная стоимость</label>
+              <input type="number" id="ecPriceClient" required oninput="onEcPriceChange()" class="w-full h-8 px-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold">
+              <span id="ecPricePerPersonHint" class="text-[10px] text-slate-500 font-medium block mt-0.5 truncate"></span>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Оплачено клиентом</label>
+              <input type="number" id="ecPaidAmount" required min="0" oninput="onEcPaidChange()" class="w-full h-8 px-2.5 bg-white border border-emerald-300 rounded-xl text-xs font-bold text-emerald-700">
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Текущий статус</label>
+              <select id="ecStatus" class="w-full h-8 px-2 bg-white border border-slate-300 rounded-xl text-xs font-bold">
+                <option value="booked">🔵 Только бронь</option>
+                <option value="prepaid">🟠 Предоплата</option>
+                <option value="paid">🟢 Оплачено 100%</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -500,18 +526,44 @@
           <select id="qTourSelect" onchange="onQuickTourChange()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-indigo-900"></select>
         </div>
 
-        <div class="grid grid-cols-3 gap-3">
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Стоимость</label>
-            <input type="number" id="qTotalPrice" oninput="calcQuickDebt()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold">
+        <!-- NEW: FAMILY MEMBERS / COMPANIONS -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-bold text-slate-700 flex items-center gap-1.5">
+              <span>👨‍👩‍👧‍👦 Члены семьи / попутчики (если заселяются вместе)</span>
+            </label>
+            <span class="text-[10px] text-slate-400">ФИО, возраст или родство</span>
           </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Предоплата (сом)</label>
-            <input type="number" id="qPaidAmount" value="0" min="0" oninput="calcQuickDebt()" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-emerald-700">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Долг:</label>
-            <div id="qDebtDisplay" class="px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-xs font-black text-amber-700 flex items-center">0 сом</div>
+          <input type="text" id="qFamilyMembers" placeholder="Напр. Супруга Айгуль, сын Тимур (8 лет)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+
+        <!-- PEOPLE COUNT + PRICING WITH +/- STEPPER -->
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 items-end">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Человек (туристов)</label>
+              <div class="flex items-center">
+                <button type="button" onclick="changePeopleCount('quick', -1)" class="w-8 h-8 rounded-l-xl bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 font-black text-base flex items-center justify-center border border-r-0 border-slate-300 transition">−</button>
+                <input type="number" id="qPeopleCount" value="1" min="1" max="50" oninput="onQuickPeopleChange()" class="w-10 h-8 text-center bg-white border border-slate-300 text-xs font-black text-slate-900 focus:outline-none">
+                <button type="button" onclick="changePeopleCount('quick', 1)" class="w-8 h-8 rounded-r-xl bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 font-black text-base flex items-center justify-center border border-l-0 border-slate-300 transition">+</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Итого (сом)</label>
+              <input type="number" id="qTotalPrice" oninput="calcQuickDebt()" class="w-full h-8 px-2.5 bg-white border border-slate-300 rounded-xl text-xs font-black text-slate-900">
+              <span id="qPricePerPersonHint" class="text-[10px] text-slate-500 font-medium block mt-0.5 truncate">8 000 сом / чел</span>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Предоплата (сом)</label>
+              <input type="number" id="qPaidAmount" value="0" min="0" oninput="calcQuickDebt()" class="w-full h-8 px-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-emerald-700">
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Остаток долга:</label>
+              <div id="qDebtDisplay" class="h-8 px-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs font-black text-amber-700 flex items-center">0 сом</div>
+            </div>
           </div>
         </div>
 
@@ -1139,19 +1191,22 @@
     }
 
     function updateStats() {
-      document.getElementById('stat-total').innerText = bookings.length + ' чел';
-      document.getElementById('stat-notes-count').innerText = bookings.filter(b => b.notes && b.notes.trim() !== '').length + ' чел';
-
+      let totalPeople = 0;
+      let notesCount = 0;
       let collected = 0;
       let totalDebt = 0;
 
       bookings.forEach(b => {
         const clientPrice = parseFloat(b.priceClient) || 0;
         const paid = parseFloat(b.paidAmount) || 0;
+        totalPeople += (parseInt(b.peopleCount) || 1);
+        if (b.notes && b.notes.trim() !== '') notesCount++;
         collected += paid;
         totalDebt += Math.max(0, clientPrice - paid);
       });
 
+      document.getElementById('stat-total').innerText = totalPeople + ' чел';
+      document.getElementById('stat-notes-count').innerText = notesCount + ' чел';
       document.getElementById('stat-collected').innerText = collected.toLocaleString() + ' сом';
       document.getElementById('stat-debt').innerText = totalDebt.toLocaleString() + ' сом';
     }
@@ -1234,10 +1289,28 @@
                 </button>
               </div>
 
-              <h3 class="text-base font-black text-slate-900 mt-1">${b.clientName}</h3>
+              <div class="flex items-center gap-2 mt-1 flex-wrap">
+                <h3 class="text-base font-black text-slate-900">${b.clientName}</h3>
+                ${(b.peopleCount && b.peopleCount > 1) ? `
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    👥 ${b.peopleCount} чел
+                  </span>
+                ` : ''}
+              </div>
               <p class="text-xs text-slate-500 font-mono flex items-center gap-1.5 mt-0.5">
                 <i data-lucide="phone" class="w-3.5 h-3.5 text-slate-400"></i> ${b.clientPhone}
               </p>
+
+              <!-- FAMILY MEMBERS / COMPANIONS -->
+              ${b.familyMembers && b.familyMembers.trim() !== '' ? `
+                <div class="mt-2 p-2 rounded-xl bg-slate-100/90 border border-slate-200 text-xs text-slate-700 flex items-start gap-1.5">
+                  <span class="text-sm">👨‍👩‍👧</span>
+                  <div class="min-w-0">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Состав семьи / попутчики:</span>
+                    <p class="font-medium text-slate-800 leading-snug">${b.familyMembers}</p>
+                  </div>
+                </div>
+              ` : ''}
 
               <!-- SMART NOTE STICKER -->
               ${b.notes && b.notes.trim() !== '' ? `
@@ -1258,7 +1331,10 @@
               <div class="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 text-xs">
                 <div class="flex justify-between items-center">
                   <span class="text-slate-500">Стоимость:</span>
-                  <span class="font-bold text-slate-900">${clientPrice.toLocaleString()} сом</span>
+                  <span class="font-bold text-slate-900">
+                    ${clientPrice.toLocaleString()} сом
+                    ${(b.peopleCount && b.peopleCount > 1) ? `<span class="text-[10px] text-indigo-700 font-bold ml-1">(${b.peopleCount} чел)</span>` : ''}
+                  </span>
                 </div>
                 <div class="flex justify-between items-center">
                   <span class="text-slate-500">Оплачено:</span>
@@ -1308,6 +1384,22 @@
     // ----------------------------------------------------
     let currentEditBooking = null;
 
+    function changePeopleCount(target, delta) {
+      if (target === 'quick') {
+        const input = document.getElementById('qPeopleCount');
+        let count = (parseInt(input.value) || 1) + delta;
+        if (count < 1) count = 1;
+        input.value = count;
+        onQuickPeopleChange();
+      } else {
+        const input = document.getElementById('ecPeopleCount');
+        let count = (parseInt(input.value) || 1) + delta;
+        if (count < 1) count = 1;
+        input.value = count;
+        onEditPeopleChange();
+      }
+    }
+
     function openEditClientModal(id) {
       currentEditBooking = bookings.find(x => x.id === id);
       if (!currentEditBooking) return;
@@ -1316,6 +1408,8 @@
       document.getElementById('ecId').value = b.id;
       document.getElementById('ecName').value = b.clientName;
       document.getElementById('ecPhone').value = b.clientPhone;
+      document.getElementById('ecPeopleCount').value = b.peopleCount || 1;
+      document.getElementById('ecFamilyMembers').value = b.familyMembers || '';
       document.getElementById('ecPriceClient').value = b.priceClient;
       document.getElementById('ecPaidAmount').value = b.paidAmount;
       document.getElementById('ecStatus').value = b.status;
@@ -1326,10 +1420,18 @@
       catalog.forEach(t => {
         const opt = document.createElement('option');
         opt.value = t.title;
-        opt.innerText = `${t.title} (${t.price.toLocaleString()} сом)`;
+        opt.innerText = `${t.title} (${t.price.toLocaleString()} сом / чел)`;
         if (t.title === b.tourRoute) opt.selected = true;
         select.appendChild(opt);
       });
+
+      const currentTour = catalog.find(x => x.title === b.tourRoute);
+      const pCount = b.peopleCount || 1;
+      if (currentTour) {
+        document.getElementById('ecPricePerPersonHint').innerText = `${currentTour.price.toLocaleString()} сом × ${pCount} чел`;
+      } else {
+        document.getElementById('ecPricePerPersonHint').innerText = '';
+      }
 
       // Populate history list
       const histList = document.getElementById('ecHistoryList');
@@ -1352,6 +1454,32 @@
 
     function closeEditClientModal() {
       document.getElementById('editClientModal').classList.add('hidden');
+    }
+
+    function onEditTourChange() {
+      const tourTitle = document.getElementById('ecTourSelect').value;
+      const t = catalog.find(x => x.title === tourTitle);
+      const count = Math.max(1, parseInt(document.getElementById('ecPeopleCount').value) || 1);
+      if (t) {
+        document.getElementById('ecPriceClient').value = t.price * count;
+        document.getElementById('ecPricePerPersonHint').innerText = `${t.price.toLocaleString()} сом × ${count} чел`;
+      }
+      onEcPaidChange();
+    }
+
+    function onEditPeopleChange() {
+      const tourTitle = document.getElementById('ecTourSelect').value;
+      const t = catalog.find(x => x.title === tourTitle);
+      const count = Math.max(1, parseInt(document.getElementById('ecPeopleCount').value) || 1);
+      if (t) {
+        document.getElementById('ecPriceClient').value = t.price * count;
+        document.getElementById('ecPricePerPersonHint').innerText = `${t.price.toLocaleString()} сом × ${count} чел`;
+      }
+      onEcPaidChange();
+    }
+
+    function onEcPriceChange() {
+      onEcPaidChange();
     }
 
     function setNoteTag(tagText) {
@@ -1381,6 +1509,9 @@
 
       const totalPr = parseFloat(document.getElementById('ecPriceClient').value) || 0;
       const paidAm = parseFloat(document.getElementById('ecPaidAmount').value) || 0;
+      const people = Math.max(1, parseInt(document.getElementById('ecPeopleCount').value) || 1);
+      const family = document.getElementById('ecFamilyMembers').value.trim();
+
       let st = document.getElementById('ecStatus').value;
       if (paidAm === 0) st = 'booked';
       else if (paidAm >= totalPr && totalPr > 0) st = 'paid';
@@ -1388,6 +1519,8 @@
 
       currentEditBooking.clientName = document.getElementById('ecName').value.trim();
       currentEditBooking.clientPhone = document.getElementById('ecPhone').value.trim();
+      currentEditBooking.peopleCount = people;
+      currentEditBooking.familyMembers = family;
       currentEditBooking.tourRoute = document.getElementById('ecTourSelect').value;
       currentEditBooking.priceClient = totalPr;
       currentEditBooking.paidAmount = paidAm;
@@ -1399,7 +1532,7 @@
       if (!Array.isArray(currentEditBooking.history)) currentEditBooking.history = [];
       currentEditBooking.history.unshift({
         who: user,
-        action: `Изменил(а) данные / заметку (${st === 'paid' ? 'Оплачено 100%' : st === 'prepaid' ? 'Предоплата ' + paidAm.toLocaleString() + ' сом' : 'Бронь'})`,
+        action: `Изменил(а) данные (${people} чел, ${st === 'paid' ? 'Оплачено 100%' : st === 'prepaid' ? 'Предоплата ' + paidAm.toLocaleString() + ' сом' : 'Бронь'})`,
         time: timeStr
       });
 
@@ -1541,12 +1674,14 @@
     // ----------------------------------------------------
     function openQuickManualModal() {
       document.getElementById('quickForm').reset();
+      document.getElementById('qPeopleCount').value = 1;
+      document.getElementById('qFamilyMembers').value = '';
       const select = document.getElementById('qTourSelect');
       select.innerHTML = '';
       catalog.forEach(t => {
         const opt = document.createElement('option');
         opt.value = t.title;
-        opt.innerText = `${t.title} (${t.price.toLocaleString()} сом)`;
+        opt.innerText = `${t.title} (${t.price.toLocaleString()} сом / чел)`;
         select.appendChild(opt);
       });
       onQuickTourChange();
@@ -1558,8 +1693,21 @@
     function onQuickTourChange() {
       const tourTitle = document.getElementById('qTourSelect').value;
       const t = catalog.find(x => x.title === tourTitle) || catalog[0];
-      document.getElementById('qTotalPrice').value = t.price;
+      const basePrice = t ? t.price : 8000;
+      const count = Math.max(1, parseInt(document.getElementById('qPeopleCount').value) || 1);
+      document.getElementById('qTotalPrice').value = basePrice * count;
       document.getElementById('qPaidAmount').value = 0;
+      document.getElementById('qPricePerPersonHint').innerText = `${basePrice.toLocaleString()} сом × ${count} чел`;
+      calcQuickDebt();
+    }
+
+    function onQuickPeopleChange() {
+      const tourTitle = document.getElementById('qTourSelect').value;
+      const t = catalog.find(x => x.title === tourTitle) || catalog[0];
+      const basePrice = t ? t.price : 8000;
+      const count = Math.max(1, parseInt(document.getElementById('qPeopleCount').value) || 1);
+      document.getElementById('qTotalPrice').value = basePrice * count;
+      document.getElementById('qPricePerPersonHint').innerText = `${basePrice.toLocaleString()} сом × ${count} чел`;
       calcQuickDebt();
     }
 
@@ -1573,6 +1721,9 @@
       e.preventDefault();
       const total = parseFloat(document.getElementById('qTotalPrice').value) || 0;
       const paid = parseFloat(document.getElementById('qPaidAmount').value) || 0;
+      const people = Math.max(1, parseInt(document.getElementById('qPeopleCount').value) || 1);
+      const family = document.getElementById('qFamilyMembers').value.trim();
+
       let st = 'booked';
       if (paid >= total && total > 0) st = 'paid';
       else if (paid > 0) st = 'prepaid';
@@ -1584,6 +1735,8 @@
         id: "tourist_" + Date.now(),
         clientName: document.getElementById('qName').value.trim(),
         clientPhone: document.getElementById('qPhone').value.trim(),
+        peopleCount: people,
+        familyMembers: family,
         tourRoute: document.getElementById('qTourSelect').value,
         currency: "KGS",
         priceClient: total,
@@ -1597,7 +1750,7 @@
         updatedBy: user,
         updatedAt: Date.now(),
         history: [
-          { who: user, action: `Создал(а) бронь (${st === 'paid' ? 'Оплачено 100%' : st === 'prepaid' ? 'Предоплата ' + paid.toLocaleString() + ' сом' : 'Бронь'})`, time: timeStr }
+          { who: user, action: `Создал(а) бронь на ${people} чел (${st === 'paid' ? 'Оплачено 100%' : st === 'prepaid' ? 'Предоплата ' + paid.toLocaleString() + ' сом' : 'Бронь'})`, time: timeStr }
         ]
       };
 
