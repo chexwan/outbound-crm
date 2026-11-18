@@ -80,7 +80,7 @@
           <div class="flex items-center gap-2.5">
             <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white font-black flex items-center justify-center text-sm">С</div>
             <div>
-              <p class="font-bold text-slate-900 text-sm leading-tight">София</p>
+              <p class="font-bold text-slate-900 text-sm leading-tight">Софья</p>
               <p class="text-[11px] text-slate-500">Руководитель</p>
             </div>
           </div>
@@ -869,7 +869,7 @@
 
     const CRM_USERS = [
       { login: 'tynchtyk', passHash: '37faea0e4f2f5aae616fe32a66c8de9fc8167747863358316fe970e792c0c7ac', name: 'Тынчтык', role: 'Менеджер туров' },
-      { login: 'sofia', passHash: '2271fbdd8bdb905e534247835c8bb8360f0b8876f2baf9b685cdf64603af04f5', name: 'София', role: 'Руководитель' },
+      { login: 'sofia', passHash: '2271fbdd8bdb905e534247835c8bb8360f0b8876f2baf9b685cdf64603af04f5', name: 'Софья', role: 'Руководитель' },
       { login: 'manager', passHash: '75a2cd9170c8c13320cd859caf0c0b9708df7b5b2e4654461736e2e8c8075112', name: 'Менеджер', role: 'Дежурный менеджер' }
     ];
 
@@ -886,6 +886,12 @@
       if (saved) {
         try {
           currentAuthUser = JSON.parse(saved);
+          const found = CRM_USERS.find(u => u.login === currentAuthUser.login);
+          if (found) {
+            currentAuthUser.name = found.name;
+            currentAuthUser.role = found.role;
+            localStorage.setItem('crm_auth_user', JSON.stringify(currentAuthUser));
+          }
           applyCurrentUser();
           const screen = document.getElementById('authScreen');
           if (screen) screen.classList.add('hidden');
@@ -893,6 +899,7 @@
         } catch (e) {
           localStorage.removeItem('crm_auth_user');
         }
+      }
       }
       const screen = document.getElementById('authScreen');
       if (screen) screen.classList.remove('hidden');
@@ -1562,7 +1569,7 @@
       }
 
       else if (debt > 0) {
-        text = `Здравствуйте, ${name}! Напоминаем по туру «${b.tourRoute}». Остаток к оплате составляет *${debt.toLocaleString()} сом*. Реквизиты MBank: 0555 123 456 (Asia Expeditions). Ждем чек об оплате! 🙌`;
+        text = `Здравствуйте, ${name}! Напоминаем по туру «${b.tourRoute}». Остаток к оплате составляет *${debt.toLocaleString()} сом*. Реквизиты MBank: 0707 136 491 (Зухраб М). Ждем чек об оплате! 🙌`;
       } else {
         text = `Здравствуйте, ${name}! Ваш тур «${b.tourRoute}» полностью оплачен! ✅ Напоминаем: сбор на стадионе Спартак в 03:30. Не забудьте паспорта! Желаем отличной поездки! ✨`;
       }
@@ -2061,7 +2068,7 @@
         const ny = catalog.find(t => t.id === 'tour_ny_almaty') || catalog[0];
         area.value = `🎄 ${ny.title.toUpperCase()}\nДаты: ${ny.dates}\n🏨 Отель: ${ny.hotel}\n\nПРОГРАММА ТУРА:\n${ny.program}\n\n💰 Стоимость тура: ${ny.price.toLocaleString()} сом\n\nВ СТОИМОСТЬ ВХОДИТ:\n${ny.included}\n\nБронируйте заранее! Места ограничены! 🙌✨\nМенеджер: ${mgr} | Asia Expeditions`;
       } else if (type === 'mbank') {
-        area.value = `Здравствуйте! ✅\n\nЗабронировали за вами места на тур!\n\nРеквизиты для предоплаты:\n📱 MBank: 0555 123 456 (Asia Expeditions)\n📱 О!Деньги: 0700 123 456\n\nПосле перевода отправьте, пожалуйста, чек сюда в чат! 🙌\n\nС уважением, менеджер ${mgr} | Asia Expeditions`;
+        area.value = `Здравствуйте! ✅\n\nЗабронировали за вами места на тур!\n\nРеквизиты для предоплаты:\n📱 MBank: 0707 136 491 (Зухраб М)\n\nПосле перевода отправьте, пожалуйста, чек сюда в чат! 🙌\n\nС уважением, менеджер ${mgr} | Asia Expeditions`;
       } else if (type === 'border') {
         area.value = `ВАЖНАЯ ПАМЯТКА ДЛЯ ВЫЕЗДА В КАЗАХСТАН 🇰🇿\n\n1. Взрослым: действующая ID-карта.\n2. Детям до 16 лет: действующий загранпаспорт.\n3. Если ребенок без одного из родителей — доверенность!\n\nДо встречи! Желаем отличной поездки! ✨\nМенеджер: ${mgr} | Asia Expeditions`;
       }
@@ -2073,7 +2080,7 @@
 
 
 
-    const APP_BUILD_VERSION = "2026.11.18.1325";
+    const APP_BUILD_VERSION = "2026.11.18.1355";
 
     function initTabFavicon() {
       try {
