@@ -144,9 +144,14 @@
             </div>
           </div>
 
-          <button onclick="openQuickManualModal()" class="sm:hidden inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-600 active:bg-emerald-700 shadow-sm">
-            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Турист
-          </button>
+          <div class="sm:hidden flex items-center gap-1.5">
+            <button onclick="openWaSmartPasteModal()" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold text-white bg-teal-600 active:bg-teal-700 shadow-sm">
+              <i data-lucide="clipboard-paste" class="w-3.5 h-3.5"></i> Из WA
+            </button>
+            <button onclick="openQuickManualModal()" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-600 active:bg-emerald-700 shadow-sm">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Турист
+            </button>
+          </div>
         </div>
 
         
@@ -179,9 +184,14 @@
           <h2 class="text-lg sm:text-xl font-black text-slate-900">Список туристов, оплаты & заметки</h2>
           <p class="text-xs text-slate-500 mt-0.5">Учет броней, статусы оплат и заметки для WhatsApp</p>
         </div>
-        <button onclick="openQuickManualModal()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-xl shadow-sm transition">
-          <i data-lucide="user-plus" class="w-4 h-4"></i> + Быстро записать туриста
-        </button>
+        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
+          <button onclick="openWaSmartPasteModal()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 rounded-xl shadow-sm transition">
+            <i data-lucide="clipboard-paste" class="w-4 h-4"></i> 📥 Вставить из WhatsApp
+          </button>
+          <button onclick="openQuickManualModal()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-xl shadow-sm transition">
+            <i data-lucide="user-plus" class="w-4 h-4"></i> + Быстро записать туриста
+          </button>
+        </div>
       </div>
 
       
@@ -553,6 +563,9 @@
       </div>
 
       <form id="quickForm" onsubmit="saveQuickBooking(event)" class="mt-4 space-y-3 text-xs">
+        <button type="button" onclick="pasteIntoQuickModal()" class="w-full py-2 px-3 bg-teal-50 hover:bg-teal-100 active:bg-teal-200 text-teal-800 font-bold rounded-xl border border-teal-200 text-xs flex items-center justify-center gap-2 transition">
+          <i data-lucide="clipboard" class="w-3.5 h-3.5"></i> 📥 Вставить скопированный чат / номер из буфера
+        </button>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block font-bold text-slate-700 mb-1">ФИО туриста *</label>
@@ -620,6 +633,89 @@
           <button type="submit" class="px-5 py-2 font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md">Сохранить</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Smart WhatsApp Paste Modal -->
+  <div id="waSmartPasteModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-100 p-6 space-y-4 text-xs custom-scrollbar">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+            <i data-lucide="clipboard-paste" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Вставка клиента из WhatsApp</h3>
+            <p class="text-[11px] text-slate-500">Автоматически распознает номер, имя и кол-во человек</p>
+          </div>
+        </div>
+        <button onclick="closeWaSmartPasteModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <!-- Quick paste button -->
+      <button type="button" onclick="readClipboardForSmartPaste()" class="w-full py-3 px-4 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 active:scale-98 text-white font-black text-xs sm:text-sm rounded-2xl shadow-md flex items-center justify-center gap-2 transition">
+        <i data-lucide="clipboard" class="w-4 h-4"></i> 📋 Нажмите, чтобы вставить из буфера (1 клик)
+      </button>
+
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">Или вставьте сюда скопированный текст / переписку:</label>
+        <textarea id="waSmartPasteInput" oninput="onWaSmartPasteInput(this.value)" rows="3" placeholder="Зажмите палец и нажмите «Вставить» (например: +996 707 123 456: Здравствуйте! Нас двое...)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition"></textarea>
+      </div>
+
+      <!-- Live preview of recognized lead -->
+      <div id="waSmartParsedCard" class="bg-teal-50/60 border border-teal-200/80 rounded-2xl p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-black uppercase tracking-wider text-teal-800 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span> Распознанные данные:
+          </span>
+          <span id="waSmartStatusBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-sky-100 text-sky-800">🔵 Только бронь</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Телефон / WhatsApp *</label>
+            <input type="text" id="waSmartPhone" placeholder="0700 000 000" class="w-full px-2.5 py-1.5 bg-white border border-teal-300 rounded-lg text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Имя клиента *</label>
+            <input type="text" id="waSmartName" placeholder="Лид с WhatsApp" class="w-full px-2.5 py-1.5 bg-white border border-teal-300 rounded-lg text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5 items-end">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Человек (туристов)</label>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="setWaSmartPeople(1)" id="btnPeople1" class="px-2 py-1 rounded-lg text-xs font-bold border transition bg-teal-600 text-white border-teal-600">1</button>
+              <button type="button" onclick="setWaSmartPeople(2)" id="btnPeople2" class="px-2 py-1 rounded-lg text-xs font-bold border transition bg-white text-slate-700 border-slate-200">2</button>
+              <button type="button" onclick="setWaSmartPeople(3)" id="btnPeople3" class="px-2 py-1 rounded-lg text-xs font-bold border transition bg-white text-slate-700 border-slate-200">3</button>
+              <button type="button" onclick="setWaSmartPeople(4)" id="btnPeople4" class="px-2 py-1 rounded-lg text-xs font-bold border transition bg-white text-slate-700 border-slate-200">4</button>
+              <input type="number" id="waSmartPeople" value="1" min="1" max="50" oninput="onWaSmartPeopleChange()" class="w-12 px-1.5 py-1 text-center bg-white border border-slate-200 rounded-lg text-xs font-black text-slate-900">
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Итого к оплате:</label>
+            <div id="waSmartTotalDisplay" class="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-black text-slate-900">16 900 сом</div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Тур:</label>
+          <select id="waSmartTourSelect" onchange="onWaSmartTourChange()" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-indigo-900"></select>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Заметка (напоминание поставится на +2 дня):</label>
+          <input type="text" id="waSmartNotes" value="🎯 Лид из WhatsApp рекламы (нужен дожим)" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700">
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+        <button type="button" onclick="closeWaSmartPasteModal()" class="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Отмена</button>
+        <button type="button" onclick="submitWaSmartPasteBooking()" class="px-6 py-2.5 font-bold text-white bg-teal-600 hover:bg-teal-700 active:scale-95 rounded-xl shadow-md transition flex items-center gap-2">
+          <i data-lucide="check" class="w-4 h-4"></i> Создать бронь на сайте
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1096,7 +1192,11 @@
 
       db.collection('bookings').onSnapshot(snapshot => {
         const list = [];
-        snapshot.forEach(doc => list.push(doc.data()));
+        snapshot.forEach(doc => {
+          const item = doc.data() || {};
+          if (!item.id) item.id = doc.id;
+          list.push(item);
+        });
         list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
         bookings = list;
         localStorage.setItem('almaty_ny_bookings', JSON.stringify(bookings));
@@ -1110,7 +1210,11 @@
 
       db.collection('catalog').onSnapshot(snapshot => {
         const list = [];
-        snapshot.forEach(doc => list.push(doc.data()));
+        snapshot.forEach(doc => {
+          const item = doc.data() || {};
+          if (!item.id) item.id = doc.id;
+          list.push(item);
+        });
         list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
         if (list.length > 0) {
           catalog = list;
@@ -1334,7 +1438,7 @@
                   <span class="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 text-slate-800 border border-slate-200">${b.tourRoute}</span>
                   ${statusBadge}
                   ${isDue ? `
-                    <button onclick="openWhatsAppModal('${b.id}')" title="Напоминание: пора связаться с туристом!" class="animate-pulse inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-black bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition">
+                    <button onclick="sendSmartAiWhatsApp('${b.id}')" title="Напоминание: пора связаться с туристом!" class="animate-pulse inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-black bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition">
                       <i data-lucide="bell" class="w-3 h-3"></i> НАПИСАТЬ
                     </button>
                   ` : ''}
@@ -1380,7 +1484,7 @@
                     </div>
                   </div>
                   ${isDue ? `
-                    <button onclick="openWhatsAppModal('${b.id}')" class="shrink-0 px-2.5 py-1 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-black text-[10px] rounded-lg shadow-xs flex items-center gap-1 transition">
+                    <button onclick="sendSmartAiWhatsApp('${b.id}')" class="shrink-0 px-2.5 py-1 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-black text-[10px] rounded-lg shadow-xs flex items-center gap-1 transition">
                       <i data-lucide="message-circle" class="w-3 h-3"></i> Написать
                     </button>
                   ` : ''}
@@ -1692,8 +1796,10 @@
         text = `Здравствуйте, ${name}! По согласованию с руководством по туру «${b.tourRoute}»: готовы сделать вам приятный комплимент и скидку при бронировании до конца недели! 🎁 Закрепить за вами места?`;
       }
 
-      else if (debt > 0) {
+      else if (b.paidAmount > 0 && debt > 0) {
         text = `Здравствуйте, ${name}! Напоминаем по туру «${b.tourRoute}». Остаток к оплате составляет *${debt.toLocaleString()} сом*. Реквизиты MBank: 0707 136 491 (Зухраб М). Ждем чек об оплате! 🙌`;
+      } else if (b.paidAmount === 0) {
+        text = `Здравствуйте, ${name}! 👋\n\nМы сейчас как раз формируем окончательные списки группы на тур «${b.tourRoute}» для бронирования номеров в отеле.\n\nПодскажите, пожалуйста, закрепляем места за вами? Чтобы зафиксировать бронь, достаточно внести небольшую предоплату от 2 000 сом на MBank (0707 136 491 Зухраб М). Ждём ваш ответ! 🙌`;
       } else {
         text = `Здравствуйте, ${name}! Ваш тур «${b.tourRoute}» полностью оплачен! ✅ Напоминаем: сбор на стадионе Спартак в 03:30. Не забудьте паспорта! Желаем отличной поездки! ✨`;
       }
@@ -1765,6 +1871,213 @@
     }
 
 
+
+    function openWaSmartPasteModal() {
+      const select = document.getElementById('waSmartTourSelect');
+      if (select) {
+        select.innerHTML = '';
+        catalog.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t.title;
+          opt.innerText = `${t.title} (${t.price.toLocaleString()} сом / чел)`;
+          select.appendChild(opt);
+        });
+      }
+      document.getElementById('waSmartPasteInput').value = '';
+      document.getElementById('waSmartPhone').value = '';
+      document.getElementById('waSmartName').value = '';
+      setWaSmartPeople(1);
+      document.getElementById('waSmartNotes').value = '🎯 Лид из WhatsApp рекламы (2 дня на оплату)';
+      document.getElementById('waSmartPasteModal').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeWaSmartPasteModal() {
+      document.getElementById('waSmartPasteModal').classList.add('hidden');
+    }
+
+    async function readClipboardForSmartPaste() {
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          const text = await navigator.clipboard.readText();
+          if (text) {
+            document.getElementById('waSmartPasteInput').value = text;
+            onWaSmartPasteInput(text);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Clipboard read restricted:", err);
+      }
+      const ta = document.getElementById('waSmartPasteInput');
+      ta.focus();
+      ta.placeholder = "👉 Зажмите пальцем здесь и нажмите «Вставить»";
+    }
+
+    function parseWaRawText(text) {
+      if (!text) return { phone: '', name: 'Клиент с WhatsApp', people: 1 };
+      
+      let phone = '';
+      const phoneMatches = text.match(/(?:\+?996|0)[\s\-\(]*[2579]\d{2}[\s\-\)]*\d{2}[\s\-]*\d{2}[\s\-]*\d{2}/i) ||
+                           text.match(/(?:\+?996|0)[\s\-\(]*[2579]\d{2}[\s\-\)]*\d{3}[\s\-]*\d{3}/i) ||
+                           text.match(/(?:\+?7)[\s\-\(]*\d{3}[\s\-\)]*\d{3}[\s\-]*\d{2}[\s\-]*\d{2}/i) ||
+                           text.match(/\+?\d[\d\s\-\(\)]{8,15}\d/);
+      if (phoneMatches) {
+        phone = phoneMatches[0].trim().replace(/[^\d\+]/g, '');
+        if (phone.startsWith('996') && phone.length === 12) phone = '+' + phone;
+      }
+
+      let people = 1;
+      const pMatch = text.match(/нас\s+(двое|трое|четверо|пятеро|шестеро|два|три|четыре|пять|\d+)/i) ||
+                     text.match(/(\d+)\s*(?:чел|человек|мест|билет|взросл)/i) ||
+                     text.match(/(двое|трое|четверо|два|три|четыре)\s*(?:чел|человек|мест|билет)/i);
+      if (pMatch) {
+        const val = pMatch[1].toLowerCase();
+        if (val === 'двое' || val === 'два') people = 2;
+        else if (val === 'трое' || val === 'три') people = 3;
+        else if (val === 'четверо' || val === 'четыре') people = 4;
+        else if (val === 'пятеро' || val === 'пять') people = 5;
+        else if (val === 'шестеро' || val === 'шесть') people = 6;
+        else {
+          const parsed = parseInt(val, 10);
+          if (parsed >= 1 && parsed <= 50) people = parsed;
+        }
+      }
+
+      let name = '';
+      const introMatch = text.match(/(?:меня зовут|я\s*-\s*|мое имя)\s+([А-ЯЁA-Z][а-яёa-z]+)/i);
+      if (introMatch) {
+        name = introMatch[1].trim();
+      } else {
+        const headerMatch = text.match(/(?:\]\s*|\n|^)([^\n:\+0-9\[]{2,25}):/);
+        if (headerMatch && !headerMatch[1].toLowerCase().includes('whatsapp') && !headerMatch[1].toLowerCase().includes('автоответ')) {
+          name = headerMatch[1].trim();
+        }
+      }
+      if (!name) name = phone ? 'Клиент с WhatsApp' : '';
+
+      return { phone, name, people, raw: text };
+    }
+
+    function onWaSmartPasteInput(val) {
+      const parsed = parseWaRawText(val);
+      if (parsed.phone) document.getElementById('waSmartPhone').value = parsed.phone;
+      if (parsed.name) document.getElementById('waSmartName').value = parsed.name;
+      if (parsed.people > 1) setWaSmartPeople(parsed.people);
+      else onWaSmartTourChange();
+    }
+
+    function setWaSmartPeople(n) {
+      const num = Math.max(1, parseInt(n) || 1);
+      document.getElementById('waSmartPeople').value = num;
+      [1, 2, 3, 4].forEach(i => {
+        const btn = document.getElementById('btnPeople' + i);
+        if (btn) {
+          if (i === num) {
+            btn.className = "px-2 py-1 rounded-lg text-xs font-bold border transition bg-teal-600 text-white border-teal-600";
+          } else {
+            btn.className = "px-2 py-1 rounded-lg text-xs font-bold border transition bg-white text-slate-700 border-slate-200";
+          }
+        }
+      });
+      onWaSmartTourChange();
+    }
+
+    function onWaSmartPeopleChange() {
+      const val = parseInt(document.getElementById('waSmartPeople').value) || 1;
+      setWaSmartPeople(val);
+    }
+
+    function onWaSmartTourChange() {
+      const select = document.getElementById('waSmartTourSelect');
+      const tourTitle = select ? select.value : '';
+      const t = catalog.find(x => x.title === tourTitle) || catalog[0];
+      const basePrice = t ? t.price : 16900;
+      const count = Math.max(1, parseInt(document.getElementById('waSmartPeople').value) || 1);
+      const total = basePrice * count;
+      document.getElementById('waSmartTotalDisplay').innerText = `${total.toLocaleString()} сом (${basePrice.toLocaleString()} × ${count})`;
+    }
+
+    function submitWaSmartPasteBooking() {
+      const phone = document.getElementById('waSmartPhone').value.trim();
+      let name = document.getElementById('waSmartName').value.trim();
+      if (!phone) {
+        alert('Пожалуйста, введите или вставьте номер телефона!');
+        return;
+      }
+      if (!name) name = 'Клиент WhatsApp ' + phone.slice(-4);
+
+      const count = Math.max(1, parseInt(document.getElementById('waSmartPeople').value) || 1);
+      const select = document.getElementById('waSmartTourSelect');
+      const tourTitle = select ? select.value : (catalog[0] ? catalog[0].title : 'Новогодний тур в Алматы');
+      const t = catalog.find(x => x.title === tourTitle) || catalog[0];
+      const basePrice = t ? t.price : 16900;
+      const total = basePrice * count;
+      const paid = 0;
+      const notes = document.getElementById('waSmartNotes').value.trim();
+
+      const user = currentAuthUser ? currentAuthUser.name : 'Тынчтык';
+      const timeStr = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+      const remindAt = Date.now() + (2 * 24 * 60 * 60 * 1000);
+
+      const newB = {
+        id: "tourist_" + Date.now(),
+        clientName: name,
+        clientPhone: phone,
+        peopleCount: count,
+        familyMembers: count > 1 ? `${count} чел (лид WhatsApp)` : '',
+        tourRoute: tourTitle,
+        currency: "KGS",
+        priceClient: total,
+        paidAmount: paid,
+        priceCost: Math.round(total * 0.75),
+        status: 'booked',
+        notes: notes ? `[${timeStr} ${user}]: ${notes}` : `[${timeStr} ${user}]: Лид из WhatsApp рекламы`,
+        remindAt: remindAt,
+        hotelCategory: '4★ Grand Mildom',
+        manager: user,
+        createdBy: user,
+        createdAt: Date.now(),
+        updatedBy: user,
+        updatedAt: Date.now(),
+        history: [
+          { who: user, action: `Создал(а) бронь из WhatsApp на ${count} чел (Только бронь)`, time: timeStr }
+        ]
+      };
+
+      bookings.unshift(newB);
+      saveToStorage();
+      if (typeof cloudSaveBooking === 'function') cloudSaveBooking(newB);
+      closeWaSmartPasteModal();
+      
+      currentStatusFilter = 'all';
+      renderBookings();
+      updateStats();
+      
+      alert(`✅ Успешно! Создана бронь: ${name} (${phone}) на ${count} чел.`);
+    }
+
+    async function pasteIntoQuickModal() {
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          const text = await navigator.clipboard.readText();
+          if (text) {
+            const parsed = parseWaRawText(text);
+            if (parsed.phone) document.getElementById('qPhone').value = parsed.phone;
+            if (parsed.name && parsed.name !== 'Клиент с WhatsApp') document.getElementById('qName').value = parsed.name;
+            if (parsed.people > 1) {
+              document.getElementById('qPeopleCount').value = parsed.people;
+              onQuickPeopleChange();
+            }
+            document.getElementById('qNotes').value = '🎯 Лид с WhatsApp (2 дня на оплату)';
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn(e);
+      }
+      alert('Скопируйте текст в WhatsApp и нажмите эту кнопку еще раз!');
+    }
 
     function openQuickManualModal() {
       document.getElementById('quickForm').reset();
@@ -2223,7 +2536,7 @@
 
 
 
-    const APP_BUILD_VERSION = "2026.11.19.1353";
+    const APP_BUILD_VERSION = "2026.11.19.1620";
 
     function initTabFavicon() {
       try {
