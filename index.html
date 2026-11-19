@@ -315,18 +315,24 @@
           <h3 class="text-lg font-bold text-slate-900">Готовые шаблоны сообщений для WhatsApp</h3>
           <p class="text-xs text-slate-500">Нажмите кнопку, чтобы загрузить текст и скопировать туристу.</p>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+          <button onclick="setScriptTemplate('target_reply')" class="p-3 rounded-2xl border border-sky-200 bg-sky-50/50 hover:border-sky-500 hover:bg-sky-50 text-left font-bold text-xs transition">
+            🎯 1. Ответ на таргет ("Хочу узнать больше")
+          </button>
+          <button onclick="setScriptTemplate('closing')" class="p-3 rounded-2xl border border-indigo-200 bg-indigo-50/50 hover:border-indigo-500 hover:bg-indigo-50 text-left font-bold text-xs transition">
+            📋 2. Финализация брони (уточнение списков)
+          </button>
           <button onclick="setScriptTemplate('mega_almaty')" class="p-3 rounded-2xl border border-cyan-200 bg-cyan-50/50 hover:border-cyan-500 hover:bg-cyan-50 text-left font-bold text-xs transition">
-            🏔️ 1. МЕГА АЛМАТЫ (8 000 сом)
+            🏔️ 3. МЕГА АЛМАТЫ (8 000 сом)
           </button>
           <button onclick="setScriptTemplate('ny_almaty')" class="p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 text-left font-bold text-xs transition">
-            🎄 2. Новый Год в Алматы (16 900)
+            🎄 4. Новый Год в Алматы (16 900)
           </button>
           <button onclick="setScriptTemplate('mbank')" class="p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 text-left font-bold text-xs transition">
-            💳 3. Реквизиты (MBank)
+            💳 5. Реквизиты (MBank)
           </button>
           <button onclick="setScriptTemplate('border')" class="p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 text-left font-bold text-xs transition">
-            🛂 4. Граница (КПП)
+            🛂 6. Граница (КПП)
           </button>
         </div>
         <div>
@@ -433,6 +439,12 @@
           
           <div class="flex flex-wrap gap-1.5 pt-1">
             <span class="text-[10px] text-amber-800 font-bold self-center mr-1">Быстрые теги:</span>
+            <button type="button" onclick="setNoteTag('финализировать бронь, уточнить')" class="px-2 py-1 rounded-lg bg-indigo-50 border border-indigo-300 text-indigo-900 text-[10px] font-bold hover:bg-indigo-100 transition">
+              📋 финализировать бронь
+            </button>
+            <button type="button" onclick="setNoteTag('лид с таргета, отправить цену')" class="px-2 py-1 rounded-lg bg-sky-50 border border-sky-300 text-sky-800 text-[10px] font-bold hover:bg-sky-100 transition">
+              🎯 лид с таргета
+            </button>
             <button type="button" onclick="setNoteTag('с двумя детьми уточнить стоимость')" class="px-2 py-1 rounded-lg bg-white border border-amber-300 text-amber-900 text-[10px] font-bold hover:bg-amber-100 transition">
               👨‍👩‍👧‍👦 с двумя детьми
             </button>
@@ -1155,7 +1167,7 @@
       } else {
         document.getElementById('viewWa').classList.remove('hidden');
         document.getElementById('tabBtnWa').className = activeClass;
-        setScriptTemplate('mega_almaty');
+        setScriptTemplate('target_reply');
       }
       lucide.createIcons();
     }
@@ -1652,7 +1664,15 @@
 
       let text = '';
 
-      if (note.includes('дет') || note.includes('ребен') || note.includes('двумя детьми')) {
+      if (note.includes('дожать') || note.includes('добить') || note.includes('дожим') || note.includes('финал') || note.includes('уточнить')) {
+        text = `Здравствуйте, ${name}! 👋\n\nМы сейчас как раз формируем окончательные списки группы на тур «${b.tourRoute}» для бронирования номеров в отеле.\n\nПодскажите, пожалуйста, закрепляем места за вами? Чтобы зафиксировать бронь, достаточно внести небольшую предоплату от 2 000 сом на MBank (0707 136 491 Зухраб М). Ждём ваш ответ! 🙌`;
+      }
+
+      else if (note.includes('таргет') || note.includes('первый контакт') || note.includes('узнать больше') || note.includes('лид') || note.includes('цена')) {
+        text = `Здравствуйте, ${name}! 👋\n\nРады вашему интересу к туру «${b.tourRoute}»!\n\n💰 Стоимость тура: ${b.priceClient ? b.priceClient.toLocaleString() : '16 900'} сом.\n\nВ стоимость тура УЖЕ ВКЛЮЧЕНО:\n• Проезд на комфортабельном автобусе туда и обратно 🚌\n• Проживание в отеле 4★ 🏨\n• Завтраки (шведский стол) 🍳\n• Праздничная программа и подарки 🎁\n• Сопровождение профессионального гида ✨\n\nОтправить вам подробную программу тура по часам? Сколько вас человек планирует поехать? 🙌`;
+      }
+
+      else if (note.includes('дет') || note.includes('ребен') || note.includes('двумя детьми')) {
         if (isMega) {
           text = `Здравствуйте, ${name}! 👨‍👩‍👧‍👦\n\nПо туру «МЕГА АЛМАТЫ» уточняем по детям:\n• Для детей 6–12 лет стоимость со скидкой — 7 500 сом (с отдельным местом и завтраком).\n• Дети до 5 лет — бесплатно (без отдельного места в автобусе).\n\nВыезд в эту субботу в 04:00 (сбор 03:30 на стадионе Спартак). Закрепить места за вами и детками? 🙌`;
         } else {
@@ -2137,7 +2157,12 @@
     function setScriptTemplate(type) {
       const area = document.getElementById('scriptText');
       const mgr = currentAuthUser ? currentAuthUser.name : 'Тынчтык';
-      if (type === 'mega_almaty') {
+
+      if (type === 'target_reply') {
+        area.value = `Здравствуйте! 👋 Рады вашему интересу к нашим турам по Алматы!\n\n💰 Стоимость туров:\n• 🏔️ Тур «МЕГА АЛМАТЫ» (2 дня / 1 ночь) — 8 000 сом\n• 🎄 «Новый Год в Алматы» (3 дня / 2 ночи) — 16 900 сом\n\n✅ В стоимость УЖЕ ВСЁ ВКЛЮЧЕНО:\n• Проезд на комфортабельном автобусе туда и обратно 🚌\n• Проживание в отеле 4★ 🏨\n• Завтраки (шведский стол) 🍳\n• Экскурсии с профессиональным гидом ✨\n• Поездка на метро и канатная дорога Медеу–Шымбулак 🚠\n\nПодсказать подробную программу по часам? На какую дату или сколько человек планируете поездку? 🙌\n\nМенеджер: ${mgr} | Asia Expeditions`;
+      } else if (type === 'closing') {
+        area.value = `Здравствуйте! 👋\n\nМы сейчас как раз формируем окончательные списки группы для бронирования номеров в отеле.\n\nПодскажите, пожалуйста, закрепляем места за вами? Чтобы зафиксировать бронь, достаточно внести небольшую предоплату от 2 000 сом на MBank (0707 136 491 Зухраб М).\n\nЕсли ваши планы изменились, пожалуйста, тоже дайте знать! 🙌\n\nМенеджер: ${mgr} | Asia Expeditions`;
+      } else if (type === 'mega_almaty') {
         const mega = catalog.find(t => t.id === 'tour_mega_almaty') || catalog[0];
         area.value = `🏔️ ТУР «МЕГА АЛМАТЫ» (2 дня / 1 ночь)
 📅 Даты: каждые выходные (пятница, суббота, воскресенье)
@@ -2198,7 +2223,7 @@
 
 
 
-    const APP_BUILD_VERSION = "2026.11.18.1436";
+    const APP_BUILD_VERSION = "2026.11.19.1353";
 
     function initTabFavicon() {
       try {
