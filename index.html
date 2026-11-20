@@ -379,13 +379,14 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block font-bold text-slate-700 mb-1">ФИО туриста *</label>
-            <input type="text" id="ecName" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="text" id="ecName" required oninput="checkEcDuplicateLive()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
           </div>
           <div>
             <label class="block font-bold text-slate-700 mb-1">Телефон / WhatsApp *</label>
-            <input type="text" id="ecPhone" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="text" id="ecPhone" required oninput="checkEcDuplicateLive()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500">
           </div>
         </div>
+        <div id="ecDupWarning" class="hidden p-2.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-semibold"></div>
 
         <div>
           <label class="block font-bold text-slate-700 mb-1">Тур / Направление *</label>
@@ -569,13 +570,14 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block font-bold text-slate-700 mb-1">ФИО туриста *</label>
-            <input type="text" id="qName" required placeholder="Азамат Ибраимов" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium">
+            <input type="text" id="qName" required oninput="checkQuickDuplicateLive()" placeholder="Азамат Ибраимов" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium">
           </div>
           <div>
             <label class="block font-bold text-slate-700 mb-1">Телефон / WhatsApp *</label>
-            <input type="text" id="qPhone" required placeholder="0555 123 456" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium">
+            <input type="text" id="qPhone" required oninput="checkQuickDuplicateLive()" placeholder="0555 123 456" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium">
           </div>
         </div>
+        <div id="qDupWarning" class="hidden p-2.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-semibold"></div>
 
         <div>
           <label class="block font-bold text-slate-700 mb-1">Выберите тур *</label>
@@ -674,13 +676,14 @@
         <div class="grid grid-cols-2 gap-2.5">
           <div>
             <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Телефон / WhatsApp *</label>
-            <input type="text" id="waSmartPhone" placeholder="0700 000 000" class="w-full px-2.5 py-1.5 bg-white border border-teal-300 rounded-lg text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <input type="text" id="waSmartPhone" oninput="checkWaSmartDuplicateLive()" placeholder="0700 000 000" class="w-full px-2.5 py-1.5 bg-white border border-teal-300 rounded-lg text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500">
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Имя клиента *</label>
-            <input type="text" id="waSmartName" placeholder="Лид с WhatsApp" class="w-full px-2.5 py-1.5 bg-white border border-teal-300 rounded-lg text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <input type="text" id="waSmartName" oninput="checkWaSmartDuplicateLive()" placeholder="Лид с WhatsApp" class="w-full px-2.5 py-1.5 bg-white border border-teal-300 rounded-lg text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500">
           </div>
         </div>
+        <div id="waSmartDupWarning" class="hidden p-2.5 bg-rose-50 border border-rose-300 text-rose-900 rounded-xl text-xs font-bold"></div>
 
         <div class="grid grid-cols-2 gap-2.5 items-end">
           <div>
@@ -1571,6 +1574,9 @@
       currentEditBooking = bookings.find(x => x.id === id);
       if (!currentEditBooking) return;
 
+      const dupW = document.getElementById('ecDupWarning');
+      if (dupW) dupW.classList.add('hidden');
+
       const b = currentEditBooking;
       document.getElementById('ecId').value = b.id;
       document.getElementById('ecName').value = b.clientName;
@@ -1685,6 +1691,21 @@
     function saveClientCard(e) {
       e.preventDefault();
       if (!currentEditBooking) return;
+
+      const editName = document.getElementById('ecName').value.trim();
+      const editPhone = document.getElementById('ecPhone').value.trim();
+      const dup = findDuplicateBooking(editPhone, editName, currentEditBooking.id);
+      if (dup) {
+        const b = dup.booking;
+        const reasonText = dup.reason === 'phone' ? `по номеру (${b.clientPhone})` : `по имени (${b.clientName})`;
+        alert(`⛔ Невозможно сохранить изменения: этот человек УЖЕ ЕСТЬ в базе (${reasonText})!\n\n` +
+              `• Турист: ${b.clientName}\n` +
+              `• Телефон: ${b.clientPhone}\n` +
+              `• Тур: ${b.tourRoute}\n` +
+              `• Менеджер: ${b.manager || 'Тынчтык'}\n\n` +
+              `Изменение отменено, чтобы не создавать дубликат.`);
+        return;
+      }
 
       const user = currentAuthUser ? currentAuthUser.name : 'Менеджер';
       const timeStr = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
@@ -1872,6 +1893,94 @@
 
 
 
+    function findDuplicateBooking(phone, name, excludeId = null) {
+      if (!bookings || !bookings.length) return null;
+
+      const rawPhone = (phone || '').replace(/\D/g, '');
+      const cleanPhone = rawPhone.length >= 9 ? rawPhone.slice(-9) : (rawPhone.length >= 6 ? rawPhone : '');
+
+      const cleanName = (name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+      const isGenericName = !cleanName || 
+                            cleanName.includes('клиент с whatsapp') || 
+                            cleanName.includes('клиент whatsapp') || 
+                            cleanName.includes('лид с whatsapp') ||
+                            cleanName === 'турист' || 
+                            cleanName === 'клиент' || 
+                            cleanName === 'лид';
+
+      for (const b of bookings) {
+        if (excludeId && b.id === excludeId) continue;
+
+        // 1. Phone match
+        if (cleanPhone) {
+          const bRawPhone = (b.clientPhone || '').replace(/\D/g, '');
+          const bCleanPhone = bRawPhone.length >= 9 ? bRawPhone.slice(-9) : (bRawPhone.length >= 6 ? bRawPhone : '');
+          if (bCleanPhone && bCleanPhone === cleanPhone) {
+            return { booking: b, reason: 'phone', match: b.clientPhone };
+          }
+        }
+
+        // 2. Name match (only if not a generic placeholder like "Клиент с WhatsApp")
+        if (!isGenericName && cleanName.length >= 3) {
+          const bCleanName = (b.clientName || '').trim().toLowerCase().replace(/\s+/g, ' ');
+          if (bCleanName && bCleanName === cleanName) {
+            return { booking: b, reason: 'name', match: b.clientName };
+          }
+        }
+      }
+
+      return null;
+    }
+
+    function checkQuickDuplicateLive() {
+      const p = document.getElementById('qPhone').value;
+      const n = document.getElementById('qName').value;
+      const warnBox = document.getElementById('qDupWarning');
+      if (!warnBox) return;
+      const dup = findDuplicateBooking(p, n);
+      if (dup) {
+        const b = dup.booking;
+        const reasonStr = dup.reason === 'phone' ? `по номеру (${b.clientPhone})` : `по имени (${b.clientName})`;
+        warnBox.innerHTML = `⚠️ <b>Внимание:</b> этот человек уже записан (${reasonStr})! Тур: ${b.tourRoute} (${b.manager || 'Тынчтык'})`;
+        warnBox.classList.remove('hidden');
+      } else {
+        warnBox.classList.add('hidden');
+      }
+    }
+
+    function checkWaSmartDuplicateLive() {
+      const p = document.getElementById('waSmartPhone').value;
+      const n = document.getElementById('waSmartName').value;
+      const warnBox = document.getElementById('waSmartDupWarning');
+      if (!warnBox) return;
+      const dup = findDuplicateBooking(p, n);
+      if (dup) {
+        const b = dup.booking;
+        const reasonStr = dup.reason === 'phone' ? `по номеру (${b.clientPhone})` : `по имени (${b.clientName})`;
+        warnBox.innerHTML = `⛔ <b>Уже есть в базе (${reasonStr})!</b> Карточка: <b>${b.clientName}</b> (${b.tourRoute})`;
+        warnBox.classList.remove('hidden');
+      } else {
+        warnBox.classList.add('hidden');
+      }
+    }
+
+    function checkEcDuplicateLive() {
+      if (!currentEditBooking) return;
+      const p = document.getElementById('ecPhone').value;
+      const n = document.getElementById('ecName').value;
+      const warnBox = document.getElementById('ecDupWarning');
+      if (!warnBox) return;
+      const dup = findDuplicateBooking(p, n, currentEditBooking.id);
+      if (dup) {
+        const b = dup.booking;
+        const reasonStr = dup.reason === 'phone' ? `по номеру (${b.clientPhone})` : `по имени (${b.clientName})`;
+        warnBox.innerHTML = `⚠️ <b>Внимание:</b> этот номер/имя уже заняты другим туристом (${b.clientName}, ${b.tourRoute})!`;
+        warnBox.classList.remove('hidden');
+      } else {
+        warnBox.classList.add('hidden');
+      }
+    }
+
     function openWaSmartPasteModal() {
       const select = document.getElementById('waSmartTourSelect');
       if (select) {
@@ -1886,6 +1995,8 @@
       document.getElementById('waSmartPasteInput').value = '';
       document.getElementById('waSmartPhone').value = '';
       document.getElementById('waSmartName').value = '';
+      const dupW = document.getElementById('waSmartDupWarning');
+      if (dupW) dupW.classList.add('hidden');
       setWaSmartPeople(1);
       document.getElementById('waSmartNotes').value = '🎯 Лид из WhatsApp рекламы (2 дня на оплату)';
       document.getElementById('waSmartPasteModal').classList.remove('hidden');
@@ -1965,6 +2076,7 @@
       if (parsed.name) document.getElementById('waSmartName').value = parsed.name;
       if (parsed.people > 1) setWaSmartPeople(parsed.people);
       else onWaSmartTourChange();
+      checkWaSmartDuplicateLive();
     }
 
     function setWaSmartPeople(n) {
@@ -2006,6 +2118,27 @@
         return;
       }
       if (!name) name = 'Клиент WhatsApp ' + phone.slice(-4);
+
+      const dup = findDuplicateBooking(phone, name);
+      if (dup) {
+        const b = dup.booking;
+        const statusRu = b.status === 'paid' ? 'Оплачено 100%' : b.status === 'prepaid' ? 'Предоплата' : 'Только бронь';
+        alert(`⛔ Запись невозможна: этот человек УЖЕ ЕСТЬ в базе!\n\n` +
+              `Совпадение по ${dup.reason === 'phone' ? 'телефону (' + b.clientPhone + ')' : 'имени (' + b.clientName + ')'}:\n` +
+              `• Турист: ${b.clientName}\n` +
+              `• Телефон: ${b.clientPhone}\n` +
+              `• Тур: ${b.tourRoute}\n` +
+              `• Статус: ${statusRu}\n` +
+              `• Менеджер: ${b.manager || 'Тынчтык'}\n\n` +
+              `Повторная запись отменена, чтобы не создавать дубликатов.`);
+        closeWaSmartPasteModal();
+        const sInput = document.getElementById('searchInput');
+        if (sInput) {
+          sInput.value = b.clientPhone || b.clientName;
+          renderBookings();
+        }
+        return;
+      }
 
       const count = Math.max(1, parseInt(document.getElementById('waSmartPeople').value) || 1);
       const select = document.getElementById('waSmartTourSelect');
@@ -2070,6 +2203,7 @@
               onQuickPeopleChange();
             }
             document.getElementById('qNotes').value = '🎯 Лид с WhatsApp (2 дня на оплату)';
+            checkQuickDuplicateLive();
             return;
           }
         }
@@ -2081,6 +2215,8 @@
 
     function openQuickManualModal() {
       document.getElementById('quickForm').reset();
+      const dupW = document.getElementById('qDupWarning');
+      if (dupW) dupW.classList.add('hidden');
       document.getElementById('qPeopleCount').value = 1;
       document.getElementById('qFamilyMembers').value = '';
       const select = document.getElementById('qTourSelect');
@@ -2126,6 +2262,30 @@
 
     function saveQuickBooking(e) {
       e.preventDefault();
+      const nameVal = document.getElementById('qName').value.trim();
+      const phoneVal = document.getElementById('qPhone').value.trim();
+
+      const dup = findDuplicateBooking(phoneVal, nameVal);
+      if (dup) {
+        const b = dup.booking;
+        const statusRu = b.status === 'paid' ? 'Оплачено 100%' : b.status === 'prepaid' ? 'Предоплата' : 'Только бронь';
+        alert(`⛔ Запись невозможна: такой турист УЖЕ ЕСТЬ в базе!\n\n` +
+              `Совпадение по ${dup.reason === 'phone' ? 'телефону (' + b.clientPhone + ')' : 'имени (' + b.clientName + ')'}:\n` +
+              `• Турист: ${b.clientName}\n` +
+              `• Телефон: ${b.clientPhone}\n` +
+              `• Тур: ${b.tourRoute}\n` +
+              `• Статус: ${statusRu}\n` +
+              `• Менеджер: ${b.manager || 'Тынчтык'}\n\n` +
+              `Повторная запись отменена, чтобы не дублировать бронь.`);
+        closeQuickModal();
+        const sInput = document.getElementById('searchInput');
+        if (sInput) {
+          sInput.value = b.clientPhone || b.clientName;
+          renderBookings();
+        }
+        return;
+      }
+
       const total = parseFloat(document.getElementById('qTotalPrice').value) || 0;
       const paid = parseFloat(document.getElementById('qPaidAmount').value) || 0;
       const people = Math.max(1, parseInt(document.getElementById('qPeopleCount').value) || 1);
@@ -2536,7 +2696,7 @@
 
 
 
-    const APP_BUILD_VERSION = "2026.11.19.1620";
+    const APP_BUILD_VERSION = "2026.11.20.1455";
 
     function initTabFavicon() {
       try {
